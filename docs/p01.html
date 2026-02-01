@@ -9,11 +9,13 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
+<meta name="author" content="Cynthia Deng" />
 
+<meta name="date" content="2026-01-31" />
 
 <title>Portfolio 1</title>
 
-<script src="site_libs/header-attrs-2.30/header-attrs.js"></script>
+<script src="site_libs/header-attrs-2.25/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
@@ -291,80 +293,141 @@ $(document).ready(function () {
 
 
 <h1 class="title toc-ignore">Portfolio 1</h1>
+<h4 class="author">Cynthia Deng</h4>
+<h4 class="date">01/31/2026</h4>
 
 </div>
 
 
-<blockquote>
-<p>The projects should be numbered consecutively (i.e., in the order in
-which you began them), and should include for each project a description
-of the goal, the product (computer program, hand graph, computer graph,
-etc.), the data, and some interpretation. Reports must be reproducible
-and of high quality in terms of writing, grammar, presentation, etc.</p>
-</blockquote>
+<div id="goal" class="section level3">
+<h3>Goal</h3>
+<p>The goal of this project is to conduct a descriptive exploratory
+analysis of a working memory dataset examining performance under placebo
+and caffeine conditions. I focus on understanding how total working
+memory scores vary across drug condition, task type (digit vs. spatial
+span), and delay length.</p>
+</div>
+<div id="data" class="section level3">
+<h3>Data</h3>
+<p>The data come from a publicly available experimental study examining
+the effects of caffeine on working memory performance in healthy adults.
+Participants completed digit span and spatial span tasks under both
+placebo and caffeine conditions across multiple delay intervals (0, 4,
+6, and 8 seconds).Total score represents an aggregate measure of overall
+task performance for each participant under each condition.</p>
+</div>
+<div id="analysis" class="section level3">
+<h3>Analysis</h3>
 <pre class="r"><code>library(tidyverse) 
-library(tidyr)
-data(fish_encounters)</code></pre>
-<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum
-eget nibh vel est aliquet iaculis at placerat sem. Aenean faucibus
-iaculis ultricies. Nullam consequat odio in ultricies ullamcorper. Etiam
-venenatis in est vitae ullamcorper. Nam vitae urna ut dolor rhoncus
-aliquet at vel neque. Quisque tristique leo finibus nisi interdum, sit
-amet tempor risus viverra. Donec mollis vulputate sodales. Nunc ornare,
-leo quis euismod eleifend, eros mi maximus felis, vel varius lacus dui
-eget nibh. Duis vitae nunc nisl. Donec accumsan aliquam elit, eu
-fringilla quam pulvinar eget.</p>
-<p>Mauris in ligula mauris. Curabitur facilisis pharetra metus eget
-lobortis. In egestas nibh sit amet faucibus eleifend. Suspendisse
-imperdiet viverra blandit. Phasellus consectetur tincidunt eros eu
-facilisis. Quisque maximus, orci eget sodales aliquam, velit lorem
-semper dolor, nec convallis erat ipsum mattis velit. Pellentesque
-porttitor, mauris vitae aliquam mattis, metus nisl viverra turpis, vel
-convallis metus sapien et ex. Nunc consequat ipsum id dolor eleifend,
-sit amet semper eros sodales. Pellentesque consectetur, dui quis
-venenatis malesuada, nunc lorem lacinia libero, vitae malesuada dui arcu
-in augue. Aliquam id sagittis libero. Vestibulum aliquet sagittis
-libero, non posuere odio molestie ut. Curabitur lacus enim, viverra vel
-odio non, pretium efficitur elit. Mauris posuere efficitur interdum.
-Nunc sed bibendum turpis, quis fringilla velit. Phasellus eu lorem
-lobortis eros molestie laoreet.</p>
-<pre class="r"><code># Create a barplot of the number of fish encounters by species
-ggplot(data = fish_encounters, aes(x = station, y = seen)) +
-  geom_bar(stat = &quot;identity&quot;) +
-  labs(x = &quot;Species&quot;, y = &quot;Number of Fish Encounters&quot;)</code></pre>
-<p><img src="p01_files/figure-html/unnamed-chunk-1-1.png" alt="" width="672" /></p>
-<p>Sed mollis purus faucibus leo finibus, ut pharetra nibh elementum.
-Nulla id orci lorem. Mauris sollicitudin mi eget tellus vehicula, ut
-convallis lorem mollis. In blandit nulla diam, a malesuada sem volutpat
-interdum. Ut elementum elit at velit maximus, ac tempor odio porttitor.
-Suspendisse lobortis sollicitudin tortor, ut pharetra libero luctus a.
-Sed hendrerit faucibus metus. Sed rutrum purus vel pellentesque
-euismod.</p>
-<pre class="r"><code># Create a barplot of the number of fish encounters by species
-ggplot(data = fish_encounters, aes(x = station, y = seen)) +
-  geom_bar(stat = &quot;identity&quot;) +
-  labs(x = &quot;Species&quot;, y = &quot;Number of Fish Encounters&quot;)</code></pre>
-<p><img src="p01_files/figure-html/unnamed-chunk-2-1.png" alt="" width="672" /></p>
-<p>Mauris placerat in velit a pharetra. Nulla viverra bibendum lectus,
-ut lobortis nibh. Aenean malesuada, orci vitae dictum placerat, enim
-justo aliquet leo, ac tincidunt augue ipsum et mi. Nullam in pharetra
-metus, nec molestie felis. Duis varius rhoncus pulvinar. Integer semper
-urna sed tellus rhoncus, vel suscipit odio iaculis. Mauris iaculis neque
-pellentesque ex convallis venenatis. Sed ultrices euismod fermentum. Ut
-feugiat risus at turpis tincidunt viverra.</p>
-<pre class="r"><code># Create a barplot of the number of fish encounters by species
-ggplot(data = fish_encounters, aes(x = station, y = seen)) +
-  geom_bar(stat = &quot;identity&quot;) +
-  labs(x = &quot;Species&quot;, y = &quot;Number of Fish Encounters&quot;)</code></pre>
-<p><img src="p01_files/figure-html/unnamed-chunk-3-1.png" alt="" width="672" /></p>
-<p>Donec sagittis suscipit orci in ultrices. Vivamus iaculis eleifend
-est et dictum. Fusce non urna at lacus dapibus tincidunt ac sed nibh.
-Donec luctus lectus elit, ac ultrices tortor mollis sit amet. Nulla
-finibus lacinia arcu. Proin sollicitudin non odio et pulvinar. Maecenas
-finibus faucibus finibus. Ut elementum metus velit, a sodales sapien
-commodo et. Vivamus pulvinar, sapien et porta cursus, elit est luctus
-nisi, eget fringilla odio diam et enim. Sed sodales suscipit bibendum.
-Morbi ut metus semper, laoreet felis sodales, consequat dolor.</p>
+library(tidyr)</code></pre>
+<pre class="r"><code>caffeine &lt;- read_csv(&quot;p01/data/caffeine.csv&quot;)</code></pre>
+<pre><code>## Rows: 320 Columns: 7
+## ── Column specification ────────────────────────────────────────────────────────
+## Delimiter: &quot;,&quot;
+## chr (2): drug, span
+## dbl (5): id, day, delay, total, max
+## 
+## ℹ Use `spec()` to retrieve the full column specification for this data.
+## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+<pre class="r"><code>glimpse(caffeine)</code></pre>
+<pre><code>## Rows: 320
+## Columns: 7
+## $ id    &lt;dbl&gt; 601, 601, 601, 601, 601, 601, 601, 601, 601, 601, 601, 601, 601,…
+## $ day   &lt;dbl&gt; 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1…
+## $ drug  &lt;chr&gt; &quot;P&quot;, &quot;P&quot;, &quot;P&quot;, &quot;P&quot;, &quot;P&quot;, &quot;P&quot;, &quot;P&quot;, &quot;P&quot;, &quot;D&quot;, &quot;D&quot;, &quot;D&quot;, &quot;D&quot;, &quot;D&quot;,…
+## $ delay &lt;dbl&gt; 0, 0, 4, 4, 6, 6, 8, 8, 0, 0, 4, 4, 6, 6, 8, 8, 0, 0, 4, 4, 6, 6…
+## $ span  &lt;chr&gt; &quot;D&quot;, &quot;S&quot;, &quot;D&quot;, &quot;S&quot;, &quot;D&quot;, &quot;S&quot;, &quot;D&quot;, &quot;S&quot;, &quot;D&quot;, &quot;S&quot;, &quot;D&quot;, &quot;S&quot;, &quot;D&quot;,…
+## $ total &lt;dbl&gt; 11, 8, 10, 10, 11, 8, 10, 8, 11, 9, 12, 9, 11, 5, 10, 7, 14, 11,…
+## $ max   &lt;dbl&gt; 10, 5, 10, 10, 8, 7, 9, 7, 10, 7, 11, 7, 8, 5, 9, 6, 11, 4, 10, …</code></pre>
+<pre class="r"><code>summary(caffeine)</code></pre>
+<pre><code>##        id             day          drug               delay    
+##  Min.   :601.0   Min.   :1.0   Length:320         Min.   :0.0  
+##  1st Qu.:605.8   1st Qu.:1.0   Class :character   1st Qu.:3.0  
+##  Median :613.5   Median :1.5   Mode  :character   Median :5.0  
+##  Mean   :613.8   Mean   :1.5                      Mean   :4.5  
+##  3rd Qu.:621.2   3rd Qu.:2.0                      3rd Qu.:6.5  
+##  Max.   :628.0   Max.   :2.0                      Max.   :8.0  
+##      span               total            max        
+##  Length:320         Min.   : 4.00   Min.   : 0.000  
+##  Class :character   1st Qu.: 9.00   1st Qu.: 8.000  
+##  Mode  :character   Median :10.00   Median :10.000  
+##                     Mean   :10.57   Mean   : 9.369  
+##                     3rd Qu.:12.00   3rd Qu.:11.000  
+##                     Max.   :16.00   Max.   :16.000</code></pre>
+<pre class="r"><code>caffeine &lt;- caffeine %&gt;%
+  mutate(
+    id    = factor(id),
+    day   = factor(day),
+    drug  = factor(drug, levels = c(&quot;P&quot;, &quot;D&quot;)),
+    span  = factor(span, levels = c(&quot;D&quot;, &quot;S&quot;)),
+    delay = factor(delay)
+  )
+caffeine &lt;- caffeine %&gt;%
+  mutate(
+    drug = recode(drug, P = &quot;Placebo&quot;, D = &quot;Caffeine&quot;),
+    span = recode(span, D = &quot;Digit span&quot;, S = &quot;Spatial span&quot;)
+  )</code></pre>
+<pre class="r"><code>ggplot(caffeine, aes(x = total)) +
+  geom_histogram(bins = 20) +
+  labs(
+    title = &quot;Distribution of total scores&quot;,
+    x = &quot;Total score&quot;,
+    y = &quot;Count&quot;
+  )</code></pre>
+<p><img src="p01_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<p>The distribution of total scores is roughly unimodal, with most
+scores falling in a middle range and fewer observations at the low and
+high ends. This suggests the outcome is not extremely skewed.</p>
+<pre class="r"><code>ggplot(caffeine, aes(x = total)) +
+  geom_histogram(bins = 20) +
+  facet_wrap(~ drug) +
+  labs(
+    title = &quot;Distribution of total scores by drug condition&quot;,
+    x = &quot;Total score&quot;,
+    y = &quot;Count&quot;
+  )</code></pre>
+<p><img src="p01_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+<p>When I split the histogram by drug condition, the placebo and
+caffeine distributions overlap substantially. Neither condition shows a
+completely different shape, which suggests any drug-related differences
+are likely modest.</p>
+<pre class="r"><code>ggplot(caffeine, aes(x = drug, y = total)) +
+  geom_boxplot(width = 0.12, outlier.alpha = 0.4) +
+  facet_wrap(~ span) +
+  labs(
+    title = &quot;Total scores by drug condition and task type&quot;,
+    x = &quot;Condition&quot;,
+    y = &quot;Total score&quot;
+  )</code></pre>
+<p><img src="p01_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+<p>Across both drug conditions, total scores are higher for the digit
+span task than for the spatial span task, indicating better overall
+performance on digit span. Within the digit span task, caffeine shows a
+slightly higher median total score than placebo, although the
+interquartile ranges overlap substantially. For the spatial span task,
+median scores under caffeine appear slightly lower than placebo, with
+greater variability and several low-score outliers in the caffeine
+condition.</p>
+<pre class="r"><code>ggplot(caffeine, aes(x = drug, y = total)) +
+  geom_boxplot() +
+  facet_grid(span ~ delay) +
+  labs(
+    title = &quot;Total scores by drug condition across task type and delay&quot;,
+    x = &quot;Condition&quot;,
+    y = &quot;Total score&quot;
+  )</code></pre>
+<p><img src="p01_files/figure-html/unnamed-chunk-6-1.png" width="672" />
+Across both digit and spatial span tasks, total scores show a general
+decline as delay length increases, with lower performance at longer
+delays. This decline is modest for the digit span task but more
+pronounced for the spatial span task, where median scores are
+consistently lower and variability is somewhat greater. Within most
+delay conditions, the placebo and caffeine distributions overlap
+substantially, with only small differences in median performance. In the
+digit span task, caffeine shows slightly higher medians at some delays,
+whereas in the spatial span task caffeine tends to show similar medians
+compared to placebo.</p>
+</div>
 
 
 
