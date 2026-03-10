@@ -13,7 +13,7 @@ These two files must be kept in the same folder — the `.set` file references t
 
 ## How to Access
 
-The data files have been shared separately via Google Drive: [INSERT GOOGLE DRIVE LINK HERE]
+The data files have been shared separately via Google Drive: [https://drive.google.com/drive/folders/1zHUSopTn8bx_Kn31Dumr9zMYSFLRpfM4?usp=drive_link]
 
 Please place both files in this `data/` folder before running the notebook.
 
