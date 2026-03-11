@@ -3,7 +3,7 @@
 <html lang="en">
 <head><meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>p02</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
+<title>p03</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
 <style type="text/css">
     pre { line-height: 125%; }
 td.linenos .normal { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
@@ -7796,103 +7796,49 @@ a.anchor-link {
 <!-- End of mermaid configuration --></head>
 <body class="jp-Notebook" data-jp-theme-light="true" data-jp-theme-name="JupyterLab Light">
 <main>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=md-title">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=cell-01">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h1 id="EEG-Source-Space-Fronto-Parietal-Theta-Connectivity">EEG Source-Space Fronto-Parietal Theta Connectivity<a class="anchor-link" href="#EEG-Source-Space-Fronto-Parietal-Theta-Connectivity">¶</a></h1><p><strong>Author:</strong> Cynthia Deng</p>
-<p><strong>Date</strong> 03-10-2026</p>
+<h1 id="Portfolio:-Building-a-Runner-Script-for-My-EEG-Connectivity-Pipeline">Portfolio: Building a Runner Script for My EEG Connectivity Pipeline<a class="anchor-link" href="#Portfolio:-Building-a-Runner-Script-for-My-EEG-Connectivity-Pipeline">¶</a></h1><p><strong>Author:</strong> Cynthia Deng<br/>
+<strong>Course:</strong> [Course Name]<br/>
+<strong>Date:</strong> Spring 2025</p>
 <hr/>
+<h2 id="Goal">Goal<a class="anchor-link" href="#Goal">¶</a></h2><p>This notebook documents my learning process as I figured out how to write a <strong>runner script</strong> for my EEG connectivity pipeline. I came into this knowing basic Python: variables, loops, functions, that kind of thing. But I had never written a script that was specifically designed to launch another script or pipeline.</p>
+<p>Throughout this portfolio, I used <strong>Claude</strong> as a learning tool. I would paste code I did not understand, ask what it does, and then try to restate the explanation in my own words. I have noted throughout where Claude helped me. The goal was not to have Claude write the portfolio for me. I used it more like a tutor: someone I could ask questions to and then figure out the answer myself.</p>
+<p>The final script I am documenting is called <code>aging_stim_run_.py</code>. It runs an EEG connectivity analysis across multiple subjects and two task conditions.</p>
 </div>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=md-goal">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=cell-02">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Goal">Goal<a class="anchor-link" href="#Goal">¶</a></h2><p>The goal of this pipeline is to compute fronto-parietal theta-band connectivity from stimulus-locked EEG epochs, using source-space imaging rather than sensor-space signals.</p>
-<p>Specifically, I am building a pipeline that:</p>
-<ol>
-<li>Takes preprocessed, epoched EEG data (.set files from EEGLAB) from participants in an aging and cognitive control study</li>
-<li>Projects the scalp EEG signals into source space using a template brain (fsaverage), so that connectivity is measured between brain regions rather than electrodes</li>
-<li>Computes ciPLV (corrected imaginary Phase-Locking Value) in the theta band (5 to 7 Hz) between frontal and parietal regions of interest (ROIs)</li>
-<li>Produces a per-subject fronto-parietal connectivity score for each condition (ontask and offtask), ready for statistical analysis</li>
-</ol>
-<p><strong>Why source space?</strong>
-Scalp EEG connectivity is heavily contaminated by volume conduction, which means the same neural source can appear at many electrodes and create spurious synchrony. By projecting to source space first, we localize activity to anatomically defined brain regions before computing connectivity.</p>
-<p><strong>Why ciPLV?</strong>
-ciPLV measures phase synchrony between two signals while being mathematically immune to zero-lag volume conduction artifacts. It is well suited for studying long-range cortical communication, such as the fronto-parietal theta synchrony associated with attention and working memory.</p>
-<p><strong>Why theta (5 to 7 Hz)?</strong>
-Frontal theta oscillations are consistently linked to top-down cognitive control, and fronto-parietal theta synchrony is proposed as a mechanism for coordinating attention networks, which are known to change with aging.</p>
+<h2 id="Step-1:-Why-Do-We-Even-Need-a-Separate-Runner-File?">Step 1: Why Do We Even Need a Separate Runner File?<a class="anchor-link" href="#Step-1:-Why-Do-We-Even-Need-a-Separate-Runner-File?">¶</a></h2><p>The first thing I was confused about was: <em>why does this script exist at all?</em> I already had a pipeline file called <code>aging_pipeline.py</code> that had all the actual analysis code in it. Why could I not just run that directly?</p>
+<p>I asked Claude this question and the answer made a lot of sense once I heard it. Claude explained that the pipeline file is like a toolbox. It defines what can be done: the functions, the methods, the logic. The runner file is the instruction sheet. It says what to actually do, with which data, and in what order.</p>
+<p>Here is a concrete way I thought about it. If I have 20+ subjects and 2 conditions, I could technically open the pipeline file and manually call every function one by one. But that would be exhausting and easy to mess up. The runner file automates all of that. It is the script that says: go through every condition, call the pipeline on every subject, and save the output.</p>
+<p>Claude also mentioned keeping code modular as another reason. If I want to change a parameter, like the time window I am analyzing, I change it in one place in the runner file rather than trying to find where it lives inside the pipeline. That kind of separation makes the whole project easier to manage over time.</p>
+<p>This was my first real "oh, that makes sense" moment.</p>
 </div>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=md-template">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=cell-03">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<hr/>
-<h2 id="Template-Overview">Template Overview<a class="anchor-link" href="#Template-Overview">¶</a></h2><p>I started this project with a general-purpose template (<code>eeg_connectivity_template_python.py</code>) for computing fronto-parietal ciPLV from EEGLAB epochs using MNE and mne-connectivity. The template gave me a solid starting structure that covered all the core steps of a source connectivity pipeline:</p>
-<pre><code>Load fsaverage anatomy (source space + BEM)
-        |
-        v
-Read atlas labels -&gt; define frontal + parietal ROIs
-        |
-        v
-For each subject:
-    Load EEGLAB epochs
-    Set montage + average reference
-    Filter to theta band
-    Estimate noise covariance
-    Build forward model
-    Build inverse operator
-    Apply inverse -&gt; source estimates
-    Extract ROI time series
-    Compute ciPLV (Fourier, 4 to 7 Hz)
-        |
-        v
-Return ciPLV matrices + ROI names
-</code></pre>
-<p>The template was written to be general and applicable to any dataset with BioSemi 128-channel EEG. It used reasonable defaults throughout. My job was to understand each part of it, and then adapt it to the specific needs of this aging study.</p>
+<h2 id="Step-2:-Understanding-the-Imports">Step 2: Understanding the Imports<a class="anchor-link" href="#Step-2:-Understanding-the-Imports">¶</a></h2><p>The first actual lines of code in the runner file are the imports. I knew what <code>import</code> meant at a basic level, but I did not always know <em>why</em> each specific import was there. Let me go through them.</p>
 </div>
 </div>
 </div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=md-steps-header">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<hr/>
-<h2 id="Step-by-Step-Pipeline">Step-by-Step Pipeline<a class="anchor-link" href="#Step-by-Step-Pipeline">¶</a></h2>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=md-step0">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<hr/>
-<h3 id="Step-0----Imports-and-Configuration">Step 0 -- Imports and Configuration<a class="anchor-link" href="#Step-0----Imports-and-Configuration">¶</a></h3><p><strong>What it does:</strong>
-This cell loads all the tools the notebook needs, and sets every adjustable parameter in one place at the top. Things like which subject to run, which condition, what time windows to use, and how many surrogate draws to do are all defined here.</p>
-<p><strong>Why we do this:</strong>
-Having all the settings in one place means you never have to dig through the code to change something. If you want to run a different subject or swap the condition from ontask to offtask, you change it here and everything else updates automatically. It also makes the notebook easier for anyone else to read, since all the analysis choices are visible right at the top.</p>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=code-step0">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=cell-04">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7900,73 +7846,45 @@ Having all the settings in one place means you never have to dig through the cod
 <div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-python"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">mne</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">mne_connectivity</span><span class="w"> </span><span class="kn">import</span> <span class="n">spectral_connectivity_epochs</span>
+<div class="highlight hl-python"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
-
-<span class="c1"># -------------------------------------------------------</span>
-<span class="c1"># CONFIGURATION -- update these to match your setup</span>
-<span class="c1"># -------------------------------------------------------</span>
-
-<span class="n">EEGLAB_DIR</span>  <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">"/path/to/your/data"</span><span class="p">)</span>  <span class="c1"># folder containing .set files</span>
-<span class="n">SUBJECT_ID</span>  <span class="o">=</span> <span class="mi">301</span>                          <span class="c1"># subject to run</span>
-<span class="n">CONDITION</span>   <span class="o">=</span> <span class="s2">"ontask"</span>                     <span class="c1"># 'ontask' or 'offtask'</span>
-<span class="n">OUT_DIR</span>     <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">"./output"</span><span class="p">)</span>
-<span class="n">OUT_DIR</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-<span class="c1"># ---- Frequency</span>
-<span class="c1"># Narrowed from template's 4-7 Hz to ensure at least 3 full cycles in the 600 ms window</span>
-<span class="n">THETA_BAND</span> <span class="o">=</span> <span class="p">(</span><span class="mf">5.</span><span class="p">,</span> <span class="mf">7.</span><span class="p">)</span>
-
-<span class="c1"># ---- Epoch and connectivity windows</span>
-<span class="n">TMIN</span><span class="p">,</span> <span class="n">TMAX</span>   <span class="o">=</span> <span class="o">-</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.8</span>   <span class="c1"># full epoch crop window in seconds</span>
-<span class="n">COV_TMIN</span>     <span class="o">=</span> <span class="o">-</span><span class="mf">0.18</span>        <span class="c1"># noise covariance baseline start</span>
-<span class="n">COV_TMAX</span>     <span class="o">=</span> <span class="o">-</span><span class="mf">0.02</span>        <span class="c1"># noise covariance baseline end</span>
-<span class="n">CONN_TMIN</span>    <span class="o">=</span> <span class="mf">0.0</span>          <span class="c1"># connectivity window starts at stimulus onset</span>
-<span class="n">CONN_TMAX</span>    <span class="o">=</span> <span class="mf">0.6</span>          <span class="c1"># connectivity window ends at 600 ms</span>
-<span class="n">BASELINE_WIN</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>  <span class="c1"># pre-stimulus window used as noise for SNR</span>
-<span class="n">RESP_WIN</span>     <span class="o">=</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">)</span>   <span class="c1"># response window used as signal for SNR</span>
-
-<span class="c1"># ---- Surrogate resampling</span>
-<span class="n">N_SURROGATES</span> <span class="o">=</span> <span class="mi">500</span>   <span class="c1"># number of random trial draws</span>
-<span class="n">SUBSAMPLE_N</span>  <span class="o">=</span> <span class="mi">94</span>    <span class="c1"># trials per draw -- set to the lowest trial count across all subjects</span>
-<span class="n">RANDOM_STATE</span> <span class="o">=</span> <span class="mi">0</span>     <span class="c1"># fixed seed for reproducibility</span>
-
-<span class="c1"># ---- Source imaging</span>
-<span class="n">SPACING</span>        <span class="o">=</span> <span class="s2">"oct6"</span>     <span class="c1"># source space resolution</span>
-<span class="n">INVERSE_METHOD</span> <span class="o">=</span> <span class="s2">"eLORETA"</span> <span class="c1"># chosen over dSPM for zero depth bias</span>
-
-<span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">RANDOM_STATE</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">aging_pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">compute_fp_ciPLV_group</span><span class="p">,</span> <span class="n">SUBJECT_IDS</span>
 </pre></div>
 </div>
 </div>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=md-step1">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=cell-05">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<hr/>
-<h3 id="Step-1----Load-Shared-Anatomy-(fsaverage)">Step 1 -- Load Shared Anatomy (fsaverage)<a class="anchor-link" href="#Step-1----Load-Shared-Anatomy-(fsaverage)">¶</a></h3><p><strong>What it does:</strong>
-This step loads a standard brain template called fsaverage, which is a kind of average brain built from many MRI scans. From it, we build three things:</p>
+<p><strong><code>import pandas as pd</code></strong> and <strong><code>from pathlib import Path</code></strong><br/>
+These are utility libraries. <code>pandas</code> is for organizing data into tables and saving them as CSV files. <code>Path</code> is for handling file paths in a clean and reliable way. I was already somewhat familiar with both and did not need to dig too deep here.</p>
+<p><strong><code>from aging_pipeline import compute_fp_ciPLV_group, SUBJECT_IDS</code></strong><br/>
+This was the most important import to understand. I am pulling two specific things from my pipeline file:</p>
 <ul>
-<li>A source space -- a map of thousands of points on the cortical surface where we will estimate brain activity</li>
-<li>A head model (BEM) -- a 3-layer representation of the skull, brain, and scalp that describes how electrical signals travel through the head</li>
-<li>A transformation file -- a small file that aligns the electrode positions on the scalp to the brain template's coordinate system</li>
+<li><code>compute_fp_ciPLV_group</code> is the main analysis function that processes EEG data for a group of subjects</li>
+<li><code>SUBJECT_IDS</code> is the list of subject ID numbers defined in the pipeline file</li>
 </ul>
-<p><strong>Why we do this:</strong>
-Since we do not have individual MRI scans for each participant, we use this shared template brain for everyone. These three objects are built once and reused for every subject, which saves a lot of time. They are the anatomical foundation that makes source imaging possible. Without them, we have no way to go from scalp electrodes to brain regions.</p>
+<p>Claude helped me understand that using <code>from ... import ...</code> is a way of being explicit about what the runner file depends on. Instead of importing the entire pipeline module, I am only bringing in what I actually need. It also makes the code easier to read because anyone looking at the runner file immediately knows which pieces of the pipeline are being used.</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=code-step1">
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=cell-06">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Step-3:-Setting-Up-Conditions-and-Directories">Step 3: Setting Up Conditions and Directories<a class="anchor-link" href="#Step-3:-Setting-Up-Conditions-and-Directories">¶</a></h2><p>The next section defines the conditions to process and the folder paths for where the data lives and where the results should go.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=cell-07">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7974,64 +7892,43 @@ Since we do not have individual MRI scans for each participant, we use this shar
 <div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-python"><pre><span></span><span class="c1"># Download fsaverage to MNE's local data directory (skipped if already present)</span>
-<span class="n">fs_subjects_dir</span> <span class="o">=</span> <span class="n">mne</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">fetch_fsaverage</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="n">subjects_dir</span>    <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">fs_subjects_dir</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="p">)</span>
-<span class="n">subject</span>         <span class="o">=</span> <span class="s2">"fsaverage"</span>
+<div class="highlight hl-python"><pre><span></span><span class="n">CONDITIONS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"ontask"</span><span class="p">,</span> <span class="s2">"offtask"</span><span class="p">]</span>
 
-<span class="c1"># Transformation file: aligns sensor positions to the fsaverage MRI coordinate system</span>
-<span class="n">trans</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">subjects_dir</span><span class="p">)</span> <span class="o">/</span> <span class="n">subject</span> <span class="o">/</span> <span class="s2">"bem"</span> <span class="o">/</span> <span class="s2">"fsaverage-trans.fif"</span>
-
-<span class="c1"># Source space: a grid of candidate dipole locations on the cortical surface</span>
-<span class="c1"># add_dist=False skips distance computation between sources, which saves time</span>
-<span class="n">src</span> <span class="o">=</span> <span class="n">mne</span><span class="o">.</span><span class="n">setup_source_space</span><span class="p">(</span>
-    <span class="n">subject</span><span class="p">,</span>
-    <span class="n">spacing</span><span class="o">=</span><span class="n">SPACING</span><span class="p">,</span>
-    <span class="n">subjects_dir</span><span class="o">=</span><span class="n">subjects_dir</span><span class="p">,</span>
-    <span class="n">add_dist</span><span class="o">=</span><span class="kc">False</span>
-<span class="p">)</span>
-
-<span class="c1"># BEM model: 3-layer head model representing brain, skull, and scalp</span>
-<span class="c1"># conductivity values (S/m) are standard values used in the field</span>
-<span class="n">bem_model</span> <span class="o">=</span> <span class="n">mne</span><span class="o">.</span><span class="n">make_bem_model</span><span class="p">(</span>
-    <span class="n">subject</span><span class="o">=</span><span class="n">subject</span><span class="p">,</span>
-    <span class="n">ico</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
-    <span class="n">conductivity</span><span class="o">=</span><span class="p">(</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.006</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">),</span>
-    <span class="n">subjects_dir</span><span class="o">=</span><span class="n">subjects_dir</span>
-<span class="p">)</span>
-
-<span class="c1"># BEM solution: precomputes the basis needed to build the forward model</span>
-<span class="n">bem</span> <span class="o">=</span> <span class="n">mne</span><span class="o">.</span><span class="n">make_bem_solution</span><span class="p">(</span><span class="n">bem_model</span><span class="p">)</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Source space: </span><span class="si">{</span><span class="n">src</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"BEM solution ready."</span><span class="p">)</span>
+<span class="n">BASE_DIR</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">"/Users/CynthiaDeng/Downloads/aging_data"</span><span class="p">)</span>
+<span class="n">OUT_DIR</span>  <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">"/Users/CynthiaDeng/Desktop/source_output_aging_stimlocked"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=md-step2">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=cell-08">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<hr/>
-<h3 id="Step-2----Define-Fronto-Parietal-ROIs">Step 2 -- Define Fronto-Parietal ROIs<a class="anchor-link" href="#Step-2----Define-Fronto-Parietal-ROIs">¶</a></h3><p><strong>What it does:</strong>
-This step uses a brain atlas to identify specific regions of interest on the cortical surface. Think of the atlas as a labeled map of the brain that divides the cortex into named regions. We pick six regions total:</p>
-<ul>
-<li>3 frontal regions -- areas in the prefrontal cortex involved in attention and cognitive control</li>
-<li>3 parietal regions -- areas in the parietal cortex involved in attention and sensory processing</li>
-</ul>
-<p><strong>Change from template -- hemisphere tracking:</strong>
-The template grabbed all matching labels from both hemispheres and put them into one combined list, without keeping track of which side they came from. For this study, I explicitly separate the left and right hemisphere versions of each region. This means at the end we can report connectivity for each hemisphere independently.</p>
-<p><strong>Why we do this:</strong>
-We are not interested in connectivity between all possible brain regions, just the fronto-parietal network, which is the specific network linked to the cognitive processes this study is about. Keeping hemispheres separate gives us more detailed results. LH and RH fronto-parietal connectivity can behave differently, especially in aging, and collapsing them together would hide that.</p>
+<p><strong><code>CONDITIONS = ["ontask", "offtask"]</code></strong><br/>
+This is a list with two strings representing the two experimental conditions in my study. "ontask" means the participant was actively doing a cognitive task when the EEG was recorded. "offtask" means they were in a more passive or resting state. By storing them in a list, the script can loop through both conditions automatically rather than me having to copy and paste the analysis code twice.</p>
+<p>I asked Claude why this variable is written in ALL CAPS. It told me this is a Python convention for <strong>constants</strong>, meaning variables whose values are not supposed to change while the script runs. Writing them in ALL_CAPS is a signal to anyone reading the code: this is a fixed setting, do not change it inside a loop or function. Python itself does not enforce this, it is just a widely used style convention.</p>
+<p><strong><code>BASE_DIR</code> and <code>OUT_DIR</code></strong><br/>
+These point to the two key folders the script cares about. <code>BASE_DIR</code> is where my raw EEG data files are stored. <code>OUT_DIR</code> is where the processed results will be saved.</p>
+<p>Putting these at the very top of the script is intentional. If I ever move my data to a different folder, I only have to update one line. Claude called this "centralizing your configuration" and said it is a good habit for any script that reads or writes files.</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=code-step2">
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=cell-09">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Step-4:-Pipeline-Parameters-and-Why-We-Re-declare-Them-Here">Step 4: Pipeline Parameters and Why We Re-declare Them Here<a class="anchor-link" href="#Step-4:-Pipeline-Parameters-and-Why-We-Re-declare-Them-Here">¶</a></h2><p>I knew that my pipeline file (<code>aging_pipeline.py</code>) already has these parameters defined inside the function signature. So why does the runner file need to list them again?</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=cell-10">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8039,607 +7936,54 @@ We are not interested in connectivity between all possible brain regions, just t
 <div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-python"><pre><span></span><span class="c1"># Load all parcellation labels from the Desikan-Killiany atlas</span>
-<span class="c1"># Each label is a named cortical region, for example 'superiorfrontal-lh'</span>
-<span class="n">labels</span> <span class="o">=</span> <span class="n">mne</span><span class="o">.</span><span class="n">read_labels_from_annot</span><span class="p">(</span>
-    <span class="n">subject</span><span class="p">,</span>
-    <span class="n">parc</span><span class="o">=</span><span class="s2">"aparc"</span><span class="p">,</span>
-    <span class="n">subjects_dir</span><span class="o">=</span><span class="n">subjects_dir</span>
-<span class="p">)</span>
-
-<span class="n">frontal_rois</span>  <span class="o">=</span> <span class="p">{</span><span class="s2">"rostralmiddlefrontal"</span><span class="p">,</span> <span class="s2">"caudalmiddlefrontal"</span><span class="p">,</span> <span class="s2">"superiorfrontal"</span><span class="p">}</span>
-<span class="n">parietal_rois</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"superiorparietal"</span><span class="p">,</span> <span class="s2">"inferiorparietal"</span><span class="p">,</span> <span class="s2">"supramarginal"</span><span class="p">}</span>
-
-<span class="c1"># Build a lookup dictionary keyed by (region_name, hemisphere)</span>
-<span class="c1"># rsplit splits on the last hyphen only, safely handling region names that contain hyphens</span>
-<span class="n">label_dict</span> <span class="o">=</span> <span class="p">{}</span>
-<span class="k">for</span> <span class="n">lab</span> <span class="ow">in</span> <span class="n">labels</span><span class="p">:</span>
-    <span class="n">region</span><span class="p">,</span> <span class="n">hemi</span> <span class="o">=</span> <span class="n">lab</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="s2">"-"</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="n">label_dict</span><span class="p">[(</span><span class="n">region</span><span class="p">,</span> <span class="n">hemi</span><span class="p">)]</span> <span class="o">=</span> <span class="n">lab</span>
-
-<span class="c1"># Helper to retrieve labels for a set of regions in a given hemisphere</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">pick_labels</span><span class="p">(</span><span class="n">regions</span><span class="p">,</span> <span class="n">hemi</span><span class="p">):</span>
-    <span class="k">return</span> <span class="p">[</span><span class="n">label_dict</span><span class="p">[(</span><span class="n">r</span><span class="p">,</span> <span class="n">hemi</span><span class="p">)]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">regions</span> <span class="k">if</span> <span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">hemi</span><span class="p">)</span> <span class="ow">in</span> <span class="n">label_dict</span><span class="p">]</span>
-
-<span class="c1"># Separate by hemisphere -- needed for LH and RH connectivity later</span>
-<span class="n">frontal_lh</span>  <span class="o">=</span> <span class="n">pick_labels</span><span class="p">(</span><span class="n">frontal_rois</span><span class="p">,</span>  <span class="s2">"lh"</span><span class="p">)</span>
-<span class="n">frontal_rh</span>  <span class="o">=</span> <span class="n">pick_labels</span><span class="p">(</span><span class="n">frontal_rois</span><span class="p">,</span>  <span class="s2">"rh"</span><span class="p">)</span>
-<span class="n">parietal_lh</span> <span class="o">=</span> <span class="n">pick_labels</span><span class="p">(</span><span class="n">parietal_rois</span><span class="p">,</span> <span class="s2">"lh"</span><span class="p">)</span>
-<span class="n">parietal_rh</span> <span class="o">=</span> <span class="n">pick_labels</span><span class="p">(</span><span class="n">parietal_rois</span><span class="p">,</span> <span class="s2">"rh"</span><span class="p">)</span>
-
-<span class="c1"># Validate that all four groups have labels</span>
-<span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="n">frontal_lh</span><span class="p">,</span> <span class="n">frontal_rh</span><span class="p">,</span> <span class="n">parietal_lh</span><span class="p">,</span> <span class="n">parietal_rh</span><span class="p">]):</span>
-    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"One or more ROI groups are empty -- check atlas label names."</span><span class="p">)</span>
-
-<span class="c1"># Final label order is [F_lh, F_rh, P_lh, P_rh]</span>
-<span class="c1"># This order defines the rows and columns of the connectivity matrix</span>
-<span class="n">fp_labels</span> <span class="o">=</span> <span class="n">frontal_lh</span> <span class="o">+</span> <span class="n">frontal_rh</span> <span class="o">+</span> <span class="n">parietal_lh</span> <span class="o">+</span> <span class="n">parietal_rh</span>
-<span class="n">roi_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">lab</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">lab</span> <span class="ow">in</span> <span class="n">fp_labels</span><span class="p">]</span>
-<span class="n">n_rois</span>    <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">fp_labels</span><span class="p">)</span>
-
-<span class="c1"># Index arrays for each group -- used later to slice the connectivity matrix by hemisphere</span>
-<span class="n">n_flh</span><span class="p">,</span> <span class="n">n_frh</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">frontal_lh</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">frontal_rh</span><span class="p">)</span>
-<span class="n">n_plh</span><span class="p">,</span> <span class="n">n_prh</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">parietal_lh</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">parietal_rh</span><span class="p">)</span>
-
-<span class="n">idx_flh</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_flh</span><span class="p">)</span>
-<span class="n">idx_frh</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n_flh</span><span class="p">,</span> <span class="n">n_flh</span> <span class="o">+</span> <span class="n">n_frh</span><span class="p">)</span>
-<span class="n">idx_plh</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n_flh</span> <span class="o">+</span> <span class="n">n_frh</span><span class="p">,</span> <span class="n">n_flh</span> <span class="o">+</span> <span class="n">n_frh</span> <span class="o">+</span> <span class="n">n_plh</span><span class="p">)</span>
-<span class="n">idx_prh</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n_flh</span> <span class="o">+</span> <span class="n">n_frh</span> <span class="o">+</span> <span class="n">n_plh</span><span class="p">,</span> <span class="n">n_rois</span><span class="p">)</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Total ROIs: </span><span class="si">{</span><span class="n">n_rois</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"ROI names: </span><span class="si">{</span><span class="n">roi_names</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<div class="highlight hl-python"><pre><span></span><span class="n">n_surrogates</span>  <span class="o">=</span> <span class="mi">500</span>      <span class="c1"># surrogate draws per subject</span>
+<span class="n">subsample_n</span>   <span class="o">=</span> <span class="mi">94</span>       <span class="c1"># trials per draw (min across all subjects)</span>
+<span class="n">random_state</span>  <span class="o">=</span> <span class="mi">0</span>
+<span class="n">tmin</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.2</span>              <span class="c1"># epoch window start (seconds)</span>
+<span class="n">tmax</span> <span class="o">=</span> <span class="mf">0.8</span>               <span class="c1"># epoch window end (seconds)</span>
+<span class="n">conn_tmin</span> <span class="o">=</span> <span class="mf">0.0</span>          <span class="c1"># connectivity computed from 0 ms</span>
+<span class="n">conn_tmax</span> <span class="o">=</span> <span class="mf">0.6</span>          <span class="c1"># connectivity computed to 600 ms</span>
 </pre></div>
 </div>
 </div>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=md-step3">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=cell-11">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<hr/>
-<h3 id="Step-3----Load-and-Preprocess-EEG-Epochs">Step 3 -- Load and Preprocess EEG Epochs<a class="anchor-link" href="#Step-3----Load-and-Preprocess-EEG-Epochs">¶</a></h3><p><strong>What it does:</strong>
-This step loads the actual EEG data for a subject -- the stimulus-locked epochs that were already cleaned and prepared in EEGLAB. Then it does a few preparation steps before source imaging can happen:</p>
-<ul>
-<li>Removes non-scalp channels -- BioSemi systems record a few extra channels like eye movement electrodes that are not brain signals. We tell MNE to ignore them</li>
-<li>Sets electrode positions -- attaches the known 3D positions of each electrode on the scalp so the software knows where each sensor is physically located</li>
-<li>Applies an average reference -- a standard correction that removes any bias introduced by the choice of reference electrode</li>
-<li>Crops the epoch -- trims the data to just the time window we care about</li>
-</ul>
-<p><strong>Change from template -- handling non-scalp channels:</strong>
-The template assumed all channels in the file were clean scalp EEG and skipped this step entirely. In practice, BioSemi 128-channel files always include 8 external channels that are not brain signals. If left in, they cause errors when fitting the electrode positions and corrupt the source imaging. I mark them as misc so MNE knows to exclude them.</p>
-<p><strong>Change from template -- global forward solution:</strong>
-The template recomputed the forward solution separately for every subject. Since all subjects share the same electrode layout and we are using the same template brain, this was unnecessary. I compute it once from the first subject and reuse it for everyone, which saves significant time.</p>
-<p><strong>Why we do this:</strong>
-The EEG data as loaded is not yet ready for source imaging. The software needs to know where every electrode sits on the scalp, the data needs to be in a reference-neutral form, and any channels that do not belong need to be excluded. These steps make sure the data is clean and correctly formatted before we start projecting it into the brain.</p>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=code-step3">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-python"><pre><span></span><span class="c1"># File naming convention for this dataset</span>
-<span class="n">file_pattern</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"sub-</span><span class="se">{{</span><span class="s2">sub</span><span class="se">}}</span><span class="s2">_erpcon_stimlocked_</span><span class="si">{</span><span class="n">CONDITION</span><span class="si">}</span><span class="s2">.set"</span>
-
-<span class="c1"># BioSemi external channels -- not scalp EEG, must be excluded before montage fitting</span>
-<span class="n">not_scalp</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"EXG1"</span><span class="p">,</span> <span class="s2">"EXG2"</span><span class="p">,</span> <span class="s2">"EXG3"</span><span class="p">,</span> <span class="s2">"EXG4"</span><span class="p">,</span> <span class="s2">"EXG5"</span><span class="p">,</span> <span class="s2">"EXG6"</span><span class="p">,</span> <span class="s2">"EXG7"</span><span class="p">,</span> <span class="s2">"EXG8"</span><span class="p">]</span>
-
-<span class="n">montage</span> <span class="o">=</span> <span class="n">mne</span><span class="o">.</span><span class="n">channels</span><span class="o">.</span><span class="n">make_standard_montage</span><span class="p">(</span><span class="s2">"biosemi128"</span><span class="p">)</span>
-
-<span class="c1"># Load epochs for this subject</span>
-<span class="n">fname</span>  <span class="o">=</span> <span class="n">EEGLAB_DIR</span> <span class="o">/</span> <span class="n">file_pattern</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">sub</span><span class="o">=</span><span class="n">SUBJECT_ID</span><span class="p">)</span>
-<span class="n">epochs</span> <span class="o">=</span> <span class="n">mne</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">read_epochs_eeglab</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-
-<span class="c1"># Mark external channels as misc so MNE excludes them from source imaging</span>
-<span class="n">present</span> <span class="o">=</span> <span class="p">[</span><span class="n">ch</span> <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">not_scalp</span> <span class="k">if</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">epochs</span><span class="o">.</span><span class="n">ch_names</span><span class="p">]</span>
-<span class="k">if</span> <span class="n">present</span><span class="p">:</span>
-    <span class="n">epochs</span><span class="o">.</span><span class="n">set_channel_types</span><span class="p">({</span><span class="n">ch</span><span class="p">:</span> <span class="s2">"misc"</span> <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">present</span><span class="p">})</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Marked as misc: </span><span class="si">{</span><span class="n">present</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-
-<span class="c1"># Crop to analysis window before referencing to save memory</span>
-<span class="n">epochs</span><span class="o">.</span><span class="n">crop</span><span class="p">(</span><span class="n">tmin</span><span class="o">=</span><span class="n">TMIN</span><span class="p">,</span> <span class="n">tmax</span><span class="o">=</span><span class="n">TMAX</span><span class="p">)</span>
-
-<span class="c1"># Set electrode positions -- on_missing='ignore' skips any unmatched channels</span>
-<span class="n">epochs</span><span class="o">.</span><span class="n">set_montage</span><span class="p">(</span><span class="n">montage</span><span class="p">,</span> <span class="n">on_missing</span><span class="o">=</span><span class="s2">"ignore"</span><span class="p">)</span>
-
-<span class="c1"># Average reference: removes the bias from whichever reference electrode was used</span>
-<span class="c1"># Applied as a projection so it is tracked and can be reversed if needed</span>
-<span class="n">epochs</span><span class="o">.</span><span class="n">set_eeg_reference</span><span class="p">(</span><span class="s2">"average"</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="n">epochs</span><span class="o">.</span><span class="n">apply_proj</span><span class="p">()</span>
-
-<span class="n">n_total</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">epochs</span><span class="p">)</span>
-<span class="n">sfreq</span>   <span class="o">=</span> <span class="n">epochs</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s2">"sfreq"</span><span class="p">]</span>
-<span class="n">ep_tmin</span> <span class="o">=</span> <span class="n">epochs</span><span class="o">.</span><span class="n">tmin</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Loaded </span><span class="si">{</span><span class="n">n_total</span><span class="si">}</span><span class="s2"> epochs | tmin=</span><span class="si">{</span><span class="n">epochs</span><span class="o">.</span><span class="n">tmin</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">  tmax=</span><span class="si">{</span><span class="n">epochs</span><span class="o">.</span><span class="n">tmax</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Sampling rate: </span><span class="si">{</span><span class="n">sfreq</span><span class="si">}</span><span class="s2"> Hz"</span><span class="p">)</span>
-</pre></div>
+<p>I asked Claude about this directly and got a clear answer. The values inside the pipeline function are <strong>default values</strong>, kind of like factory settings. They are what the function will use if no one tells it otherwise. The runner file is where I say: no, for this specific study, I want to use <em>these</em> values. By re-declaring them here, the runner is explicitly overriding the defaults.</p>
+<p>There is also a practical reason. If I want to change a parameter, like making the connectivity window longer, I change it here in the runner file. I do not have to go digging through the pipeline code. Everything that can be tuned for a given analysis run lives in one visible place at the top of this script. That makes the whole thing much easier to manage.</p>
+<p>Now here is what each parameter actually means:</p>
+<p><strong><code>n_surrogates = 500</code></strong><br/>
+Surrogate analysis is a statistical method used in EEG connectivity research to test whether the connectivity we measure is real or just random noise. We generate 500 shuffled versions of the data and compare our actual result against that distribution. 500 is enough draws to get a stable statistical estimate without the script taking too long to run.</p>
+<p><strong><code>subsample_n = 94</code></strong><br/>
+Not every subject has the same number of clean trials after artifact rejection. To make a fair comparison, the script randomly draws the same number of trials from each subject on each surrogate run. 94 comes from the subject with the fewest usable trials, so nobody gets excluded from the analysis.</p>
+<p><strong><code>random_state = 0</code></strong><br/>
+I asked Claude why this is set to 0 specifically. It explained that this seeds the random number generator. By fixing the seed, the random subsampling happens in the same order every single time you run the script. Without this, results would vary slightly each run and the analysis would not be reproducible. The value 0 is just conventional; any fixed number would work.</p>
+<p><strong><code>tmin = -0.2</code> and <code>tmax = 0.8</code></strong><br/>
+These define the time window for each EEG epoch relative to when the stimulus appeared. We start 200 ms before the stimulus (negative = before) and end 800 ms after. The pre-stimulus window is important because it is used for <strong>baseline correction</strong>, which means subtracting out whatever the brain was doing before the stimulus so that we can isolate the actual response to it.</p>
+<p><strong><code>conn_tmin = 0.0</code> and <code>conn_tmax = 0.6</code></strong><br/>
+Even though we record the full epoch from -200 ms to 800 ms, the connectivity analysis only runs from 0 to 600 ms. The comment in the code mentions this is to "avoid motor" activity. If participants pressed a button in response to the stimulus, that motor signal would show up in the EEG and contaminate the connectivity measure. Stopping at 600 ms keeps the analysis focused on the cognitive response to the stimulus rather than the physical button press.</p>
 </div>
 </div>
 </div>
 </div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=md-step4">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=cell-12">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<hr/>
-<h3 id="Step-4----Compute-Global-Forward-Solution">Step 4 -- Compute Global Forward Solution<a class="anchor-link" href="#Step-4----Compute-Global-Forward-Solution">¶</a></h3><p><strong>What it does:</strong>
-This step builds a mathematical map that describes how a signal originating from any point in the brain would look at each scalp electrode. It combines the electrode positions from Step 3 with the head model and source space from Step 1 to create this map. It is computed once using the first subject's electrode layout and then reused for all subjects.</p>
-<p><strong>Why we do this:</strong>
-Before we can work backwards from scalp signals to brain sources, we first need to understand the forward direction. If the brain fires here, what does the scalp see? This is a necessary building block for the next step. Because all subjects in this study use the same 128-channel BioSemi setup and the same template brain, this map is identical for everyone, so there is no need to recompute it per subject.</p>
+<h2 id="Step-5:-The-if-__name__-==-%22__main__%22:-Block">Step 5: The <code>if __name__ == "__main__":</code> Block<a class="anchor-link" href="#Step-5:-The-if-__name__-==-%22__main__%22:-Block">¶</a></h2><p>Honestly, this was the line that confused me the most when I first saw it. <em>if the name is main?</em> What does that even mean?</p>
+<p>I asked Claude to explain this multiple times in different ways before it finally clicked.</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=code-step4">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-python"><pre><span></span><span class="c1"># Forward solution: maps source dipoles to scalp electrode voltages</span>
-<span class="c1"># Computed once using the current subject's channel layout (same for all subjects)</span>
-<span class="n">fwd_global</span> <span class="o">=</span> <span class="n">mne</span><span class="o">.</span><span class="n">make_forward_solution</span><span class="p">(</span>
-    <span class="n">epochs</span><span class="o">.</span><span class="n">info</span><span class="p">,</span>       <span class="c1"># channel positions and layout</span>
-    <span class="n">trans</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">trans</span><span class="p">),</span>  <span class="c1"># coordinate transform aligning sensor space to MRI space</span>
-    <span class="n">src</span><span class="o">=</span><span class="n">src</span><span class="p">,</span>           <span class="c1"># source space (cortical dipole locations)</span>
-    <span class="n">bem</span><span class="o">=</span><span class="n">bem</span><span class="p">,</span>           <span class="c1"># BEM solution (volume conductor model)</span>
-    <span class="n">eeg</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>          <span class="c1"># we are working with EEG, not MEG</span>
-    <span class="n">mindist</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span>       <span class="c1"># exclude sources within 5 mm of inner skull for numerical stability</span>
-    <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span>
-<span class="p">)</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Forward solution: </span><span class="si">{</span><span class="n">fwd_global</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=md-step5">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<hr/>
-<h3 id="Step-5----Noise-Covariance,-Inverse-Operator,-and-Adaptive-Lambda2">Step 5 -- Noise Covariance, Inverse Operator, and Adaptive Lambda2<a class="anchor-link" href="#Step-5----Noise-Covariance,-Inverse-Operator,-and-Adaptive-Lambda2">¶</a></h3><p><strong>What it does:</strong>
-This step works backwards from the scalp signals to estimate what was happening in the brain, which is the reverse of Step 4. It has three parts:</p>
-<ul>
-<li>Noise covariance -- looks at the pre-stimulus period before anything happened to get a sense of what the background noise in the signal looks like</li>
-<li>Inverse operator -- combines the forward solution and the noise estimate to build a tool that can translate scalp voltages into brain source activity</li>
-<li>Adaptive lambda2 -- a tuning parameter that controls how much the solution trusts the data versus smoothing it out</li>
-</ul>
-<p><strong>Change from template -- adaptive lambda2:</strong>
-The template used a fixed value for lambda2, essentially assuming that every subject's data has the same quality. In reality, signal quality varies a lot across participants, especially in an aging sample where older adults often have noisier EEG. I compute lambda2 from each subject's actual data by comparing how strong the signal is during the response window versus the background noise in the pre-stimulus baseline. Subjects with cleaner data get a value that trusts the data more, and subjects with noisier data get more smoothing applied. This makes the pipeline fairer and better adapted to the real variability in the dataset.</p>
-<p><strong>Why we do this:</strong>
-Going from scalp to brain is mathematically ambiguous since many different brain activity patterns could produce the same scalp signal. The inverse operator is our best mathematical solution to that problem, and lambda2 is how we handle uncertainty in that solution. Computing it from the real data rather than assuming a fixed value makes the results more reliable across subjects.</p>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=code-step5">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-python"><pre><span></span><span class="c1"># Noise covariance from pre-stimulus baseline</span>
-<span class="c1"># 'shrunk' method applies shrinkage regularization for a stable estimate</span>
-<span class="n">noise_cov</span> <span class="o">=</span> <span class="n">mne</span><span class="o">.</span><span class="n">compute_covariance</span><span class="p">(</span>
-    <span class="n">epochs</span><span class="p">,</span>
-    <span class="n">tmin</span><span class="o">=</span><span class="n">COV_TMIN</span><span class="p">,</span>
-    <span class="n">tmax</span><span class="o">=</span><span class="n">COV_TMAX</span><span class="p">,</span>
-    <span class="n">method</span><span class="o">=</span><span class="s2">"shrunk"</span><span class="p">,</span>
-    <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span>
-<span class="p">)</span>
-
-<span class="c1"># Inverse operator</span>
-<span class="c1"># loose=0.2 allows a small amount of tangential dipole orientation</span>
-<span class="c1"># depth=0.8 prevents the solution from over-favoring superficial sources</span>
-<span class="n">inverse_op</span> <span class="o">=</span> <span class="n">mne</span><span class="o">.</span><span class="n">minimum_norm</span><span class="o">.</span><span class="n">make_inverse_operator</span><span class="p">(</span>
-    <span class="n">epochs</span><span class="o">.</span><span class="n">info</span><span class="p">,</span>
-    <span class="n">fwd_global</span><span class="p">,</span>
-    <span class="n">noise_cov</span><span class="p">,</span>
-    <span class="n">loose</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
-    <span class="n">depth</span><span class="o">=</span><span class="mf">0.8</span>
-<span class="p">)</span>
-
-<span class="c1"># Compute adaptive lambda2 from median epoch SNR</span>
-<span class="c1"># RMS helper: computes signal power within a given time window</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">rms</span><span class="p">(</span><span class="n">ep</span><span class="p">,</span> <span class="n">win</span><span class="p">):</span>
-    <span class="n">w0</span><span class="p">,</span> <span class="n">w1</span> <span class="o">=</span> <span class="n">win</span>
-    <span class="n">s</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">((</span><span class="n">w0</span> <span class="o">-</span> <span class="n">ep_tmin</span><span class="p">)</span> <span class="o">*</span> <span class="n">sfreq</span><span class="p">))</span>  <span class="c1"># convert time in seconds to sample index</span>
-    <span class="n">e</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">((</span><span class="n">w1</span> <span class="o">-</span> <span class="n">ep_tmin</span><span class="p">)</span> <span class="o">*</span> <span class="n">sfreq</span><span class="p">))</span>
-    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">ep</span><span class="p">[:,</span> <span class="n">s</span><span class="p">:</span><span class="n">e</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span><span class="p">))</span>
-
-<span class="n">snrs</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="k">for</span> <span class="n">ep</span> <span class="ow">in</span> <span class="n">epochs</span><span class="o">.</span><span class="n">get_data</span><span class="p">():</span>
-    <span class="n">sig</span> <span class="o">=</span> <span class="n">rms</span><span class="p">(</span><span class="n">ep</span><span class="p">,</span> <span class="n">RESP_WIN</span><span class="p">)</span>           <span class="c1"># signal: power in the response window</span>
-    <span class="n">noi</span> <span class="o">=</span> <span class="n">rms</span><span class="p">(</span><span class="n">ep</span><span class="p">,</span> <span class="n">BASELINE_WIN</span><span class="p">)</span>       <span class="c1"># noise: power in the pre-stimulus baseline</span>
-    <span class="n">snrs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sig</span> <span class="o">/</span> <span class="p">(</span><span class="n">noi</span> <span class="o">+</span> <span class="mf">1e-12</span><span class="p">))</span>  <span class="c1"># small value added to avoid division by zero</span>
-
-<span class="n">median_snr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">snrs</span><span class="p">)</span>
-<span class="n">lambda2</span>    <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">median_snr</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Median SNR:  </span><span class="si">{</span><span class="n">median_snr</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Lambda2:     </span><span class="si">{</span><span class="n">lambda2</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  (template fixed value was 1/9 = </span><span class="si">{</span><span class="mi">1</span><span class="o">/</span><span class="mi">9</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=md-step6">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<hr/>
-<h3 id="Step-6----Source-Reconstruction-and-ROI-Time-Series-Extraction">Step 6 -- Source Reconstruction and ROI Time Series Extraction<a class="anchor-link" href="#Step-6----Source-Reconstruction-and-ROI-Time-Series-Extraction">¶</a></h3><p><strong>What it does:</strong>
-This step applies the inverse operator to the actual EEG data. For every epoch and every time point, it estimates what brain activity was happening at each point on the cortical surface. Then it summarizes that activity down to one time series per ROI, so instead of thousands of individual brain points we end up with 12 time series, one per ROI across both hemispheres.</p>
-<p><strong>Change from template -- eLORETA instead of dSPM:</strong>
-The template used a method called dSPM. It works well but has a known tendency to make sources near the surface of the brain look stronger than they actually are. This is called depth bias. For this study, where we are comparing brain network activity across age groups, that bias could quietly distort the results. I switched to eLORETA, which is specifically designed to treat surface and deep sources equally, giving a fairer picture of where activity is actually coming from.</p>
-<p><strong>Change from template -- pca_flip instead of mean_flip:</strong>
-Once we have source activity, each ROI contains dozens of individual source points. We need to collapse those into one representative time series. The template used mean_flip, which simply averages them after aligning their signs. I use pca_flip instead, which finds the single direction that best captures what all the points in the region are doing together. This is a smarter summary that holds up better when the region is large or the points within it are not all doing exactly the same thing.</p>
-<p><strong>Why we do this:</strong>
-This is the core of source imaging. We are converting scalp EEG into estimated brain activity, localized to the specific regions we care about. The output of this step is what the connectivity analysis in the next step actually runs on. Everything up to this point has been preparation to get here.</p>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=code-step6">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-python"><pre><span></span><span class="c1"># Apply inverse operator to all epochs</span>
-<span class="c1"># Returns a list of SourceEstimate objects, one per epoch</span>
-<span class="n">stcs</span> <span class="o">=</span> <span class="n">mne</span><span class="o">.</span><span class="n">minimum_norm</span><span class="o">.</span><span class="n">apply_inverse_epochs</span><span class="p">(</span>
-    <span class="n">epochs</span><span class="p">,</span>
-    <span class="n">inverse_op</span><span class="p">,</span>
-    <span class="n">lambda2</span><span class="o">=</span><span class="n">lambda2</span><span class="p">,</span>          <span class="c1"># adaptive regularization computed from median SNR</span>
-    <span class="n">method</span><span class="o">=</span><span class="n">INVERSE_METHOD</span><span class="p">,</span>    <span class="c1"># eLORETA -- no depth bias</span>
-    <span class="n">pick_ori</span><span class="o">=</span><span class="s2">"normal"</span><span class="p">,</span>        <span class="c1"># constrain dipoles to surface-normal orientation</span>
-    <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span>
-<span class="p">)</span>
-
-<span class="c1"># Extract one time series per ROI per epoch</span>
-<span class="c1"># pca_flip finds the first principal component across all dipoles in the label</span>
-<span class="c1"># return_generator=False computes everything at once so we can convert to a numpy array</span>
-<span class="n">label_ts_all</span> <span class="o">=</span> <span class="n">mne</span><span class="o">.</span><span class="n">extract_label_time_course</span><span class="p">(</span>
-    <span class="n">stcs</span><span class="p">,</span>
-    <span class="n">fp_labels</span><span class="p">,</span>
-    <span class="n">inverse_op</span><span class="p">[</span><span class="s2">"src"</span><span class="p">],</span>
-    <span class="n">mode</span><span class="o">=</span><span class="s2">"pca_flip"</span><span class="p">,</span>
-    <span class="n">return_generator</span><span class="o">=</span><span class="kc">False</span>
-<span class="p">)</span>
-
-<span class="c1"># Convert to numpy array with shape (n_epochs, n_rois, n_times)</span>
-<span class="n">label_ts_all</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">label_ts_all</span><span class="p">)</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"label_ts_all shape: </span><span class="si">{</span><span class="n">label_ts_all</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  -&gt; (n_epochs=</span><span class="si">{</span><span class="n">label_ts_all</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">, n_rois=</span><span class="si">{</span><span class="n">label_ts_all</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">, n_times=</span><span class="si">{</span><span class="n">label_ts_all</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=md-step7">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<hr/>
-<h3 id="Step-7----ciPLV-Connectivity-(Point-Estimate)">Step 7 -- ciPLV Connectivity (Point Estimate)<a class="anchor-link" href="#Step-7----ciPLV-Connectivity-(Point-Estimate)">¶</a></h3><p><strong>What it does:</strong>
-This step takes the 12 ROI time series from Step 6 and computes connectivity between every pair of regions. It is asking how synchronized these two brain regions are in the theta frequency range. The result is a matrix where every cell represents how connected two ROIs are.</p>
-<p><strong>Change from template -- multitaper instead of Fourier:</strong>
-The template used a method called Fourier to estimate the frequency content of the signal. It works, but produces noisier estimates, especially when the time window is short as ours is at 600 ms. I switched to multitaper, which runs multiple slightly different versions of the same analysis and averages them together. The result is a more stable and reliable connectivity estimate. The trade-off is that it is a little slower, but for the final reported values that stability is worth it.</p>
-<p><strong>Change from template -- narrower theta band (5 to 7 Hz instead of 4 to 7 Hz):</strong>
-At 4 Hz, a single cycle takes 250 ms, meaning only about 2 full cycles fit inside our 600 ms window. That is not enough to get a reliable phase estimate. By starting at 5 Hz instead, we ensure at least 3 full cycles fit in the window, giving the connectivity measure something solid to work with.</p>
-<p><strong>Change from template -- stimulus-locked connectivity window (0.0 to 0.6 s):</strong>
-The template computed connectivity across the full epoch. I restrict it to 0.0 to 0.6 seconds post-stimulus, which is the window where active cognitive processing is happening. This avoids contaminating the estimate with the pre-stimulus baseline or late activity that is unrelated to the task.</p>
-<p><strong>Why we do this:</strong>
-This is the step where we actually measure what we set out to measure. All the previous steps were building up to producing clean, reliable input for exactly this computation.</p>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=code-step7">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-python"><pre><span></span><span class="c1"># Wrap ROI time series in an EpochsArray so mne-connectivity can process them</span>
-<span class="n">roi_ch_names</span>     <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"ROI</span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_rois</span><span class="p">)]</span>
-<span class="n">info_roi</span>         <span class="o">=</span> <span class="n">mne</span><span class="o">.</span><span class="n">create_info</span><span class="p">(</span><span class="n">ch_names</span><span class="o">=</span><span class="n">roi_ch_names</span><span class="p">,</span> <span class="n">sfreq</span><span class="o">=</span><span class="n">sfreq</span><span class="p">,</span> <span class="n">ch_types</span><span class="o">=</span><span class="s2">"misc"</span><span class="p">)</span>
-<span class="n">roi_epochs_fixed</span> <span class="o">=</span> <span class="n">mne</span><span class="o">.</span><span class="n">EpochsArray</span><span class="p">(</span><span class="n">label_ts_all</span><span class="p">,</span> <span class="n">info_roi</span><span class="p">,</span> <span class="n">tmin</span><span class="o">=</span><span class="n">ep_tmin</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-
-<span class="c1"># Compute ciPLV point estimate using all trials with multitaper</span>
-<span class="n">con</span> <span class="o">=</span> <span class="n">spectral_connectivity_epochs</span><span class="p">(</span>
-    <span class="n">roi_epochs_fixed</span><span class="p">,</span>
-    <span class="n">method</span><span class="o">=</span><span class="s2">"ciplv"</span><span class="p">,</span>        <span class="c1"># corrected imaginary PLV: robust to volume conduction</span>
-    <span class="n">mode</span><span class="o">=</span><span class="s2">"multitaper"</span><span class="p">,</span>     <span class="c1"># lower spectral variance than Fourier, better for short windows</span>
-    <span class="n">sfreq</span><span class="o">=</span><span class="n">sfreq</span><span class="p">,</span>
-    <span class="n">fmin</span><span class="o">=</span><span class="n">THETA_BAND</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-    <span class="n">fmax</span><span class="o">=</span><span class="n">THETA_BAND</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
-    <span class="n">faverage</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>         <span class="c1"># average across frequencies to get one value per ROI pair</span>
-    <span class="n">mt_adaptive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>      <span class="c1"># adapt taper weights to local SNR</span>
-    <span class="n">mt_low_bias</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>      <span class="c1"># only use tapers with good spectral concentration</span>
-    <span class="n">mt_bandwidth</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span>      <span class="c1"># controls spectral smoothing in Hz</span>
-    <span class="n">tmin</span><span class="o">=</span><span class="n">CONN_TMIN</span><span class="p">,</span>        <span class="c1"># start at stimulus onset</span>
-    <span class="n">tmax</span><span class="o">=</span><span class="n">CONN_TMAX</span><span class="p">,</span>        <span class="c1"># end at 600 ms</span>
-    <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span>
-<span class="p">)</span>
-
-<span class="c1"># Extract as a full connectivity matrix and remove the trailing frequency dimension</span>
-<span class="n">ci_fixed</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">con</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="n">output</span><span class="o">=</span><span class="s2">"dense"</span><span class="p">))</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"ciPLV matrix shape: </span><span class="si">{</span><span class="n">ci_fixed</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"ciPLV mean=</span><span class="si">{</span><span class="n">ci_fixed</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">  max=</span><span class="si">{</span><span class="n">ci_fixed</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=md-step8">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<hr/>
-<h3 id="Step-8----Surrogate-Resampling-for-Trial-Count-Balancing">Step 8 -- Surrogate Resampling for Trial-Count Balancing<a class="anchor-link" href="#Step-8----Surrogate-Resampling-for-Trial-Count-Balancing">¶</a></h3><p><strong>What it does:</strong>
-This step runs the connectivity analysis not once, but 500 times. Each time it uses a randomly selected subset of trials. The 500 resulting connectivity matrices are then averaged together to produce the final estimate for each subject.</p>
-<p><strong>Change from template -- this entire step is new:</strong>
-The template had no trial balancing at all. It simply computed connectivity using whatever trials were available for each subject. The problem is that connectivity estimates are sensitive to how many trials go into them. A subject with 150 clean epochs will produce a different estimate than a subject with 80, not necessarily because their brain connectivity is different, but simply because of the different trial counts. In an aging study where artifact rejection rates vary across participants, this is a real confound.</p>
-<p>To fix this, I set the subsample size to 94, which was the lowest trial count any subject had after artifact rejection. For each of the 500 draws, I randomly subsample exactly 94 trials from whatever is available for that subject. Averaging across 500 draws gives a stable estimate, and because every subject is evaluated on the same number of trials, the results are directly comparable.</p>
-<p><strong>Why Fourier here and not multitaper:</strong>
-Each of the 500 draws needs to run quickly. Fourier is faster than multitaper, and since we are averaging 500 estimates together the stability that multitaper provides is already achieved through the averaging itself. Multitaper is reserved for the single point estimate in Step 7 where there is no averaging to fall back on.</p>
-<p><strong>Why we do this:</strong>
-Without this step, differences in connectivity between subjects or conditions could partly reflect differences in how many trials were available rather than actual differences in brain activity. This step removes that confound and makes the final scores fair and comparable across everyone in the study.</p>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=code-step8">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-python"><pre><span></span><span class="c1"># Upper triangle indices -- we only compute each pair once (no self-connectivity on diagonal)</span>
-<span class="n">iu</span><span class="p">,</span> <span class="n">ju</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">triu_indices</span><span class="p">(</span><span class="n">n_rois</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-
-<span class="c1"># Number of trials to draw per surrogate</span>
-<span class="c1"># 94 was chosen because it was the lowest trial count across all subjects</span>
-<span class="n">n_draw</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">n_total</span><span class="p">,</span> <span class="n">SUBSAMPLE_N</span><span class="p">)</span>
-<span class="k">if</span> <span class="n">n_total</span> <span class="o">&lt;</span> <span class="n">SUBSAMPLE_N</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"WARNING: </span><span class="si">{</span><span class="n">n_total</span><span class="si">}</span><span class="s2"> epochs available, which is less than subsample_n=</span><span class="si">{</span><span class="n">SUBSAMPLE_N</span><span class="si">}</span><span class="s2">. Using all trials."</span><span class="p">)</span>
-
-<span class="c1"># Storage for all surrogate connectivity matrices</span>
-<span class="n">ci_surrogates</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">N_SURROGATES</span><span class="p">,</span> <span class="n">n_rois</span><span class="p">,</span> <span class="n">n_rois</span><span class="p">))</span>
-
-<span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N_SURROGATES</span><span class="p">):</span>
-
-    <span class="c1"># Randomly pick n_draw trials without replacement</span>
-    <span class="n">pick_idx</span>   <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">n_total</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n_draw</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-    <span class="n">label_ts</span>   <span class="o">=</span> <span class="n">label_ts_all</span><span class="p">[</span><span class="n">pick_idx</span><span class="p">]</span>
-    <span class="n">roi_epochs</span> <span class="o">=</span> <span class="n">mne</span><span class="o">.</span><span class="n">EpochsArray</span><span class="p">(</span><span class="n">label_ts</span><span class="p">,</span> <span class="n">info_roi</span><span class="p">,</span> <span class="n">tmin</span><span class="o">=</span><span class="n">ep_tmin</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-
-    <span class="c1"># Suppress harmless MNE warnings that appear during surrogate iterations</span>
-    <span class="k">with</span> <span class="n">warnings</span><span class="o">.</span><span class="n">catch_warnings</span><span class="p">():</span>
-        <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s2">"ignore"</span><span class="p">,</span> <span class="n">message</span><span class="o">=</span><span class="s2">"There were no Annotations stored*"</span><span class="p">)</span>
-
-        <span class="n">con</span> <span class="o">=</span> <span class="n">spectral_connectivity_epochs</span><span class="p">(</span>
-            <span class="n">roi_epochs</span><span class="p">,</span>
-            <span class="n">method</span><span class="o">=</span><span class="s2">"ciplv"</span><span class="p">,</span>
-            <span class="n">mode</span><span class="o">=</span><span class="s2">"fourier"</span><span class="p">,</span>     <span class="c1"># faster than multitaper; variance is handled by averaging 500 draws</span>
-            <span class="n">sfreq</span><span class="o">=</span><span class="n">sfreq</span><span class="p">,</span>
-            <span class="n">fmin</span><span class="o">=</span><span class="n">THETA_BAND</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-            <span class="n">fmax</span><span class="o">=</span><span class="n">THETA_BAND</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
-            <span class="n">faverage</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="n">tmin</span><span class="o">=</span><span class="n">CONN_TMIN</span><span class="p">,</span>
-            <span class="n">tmax</span><span class="o">=</span><span class="n">CONN_TMAX</span><span class="p">,</span>
-            <span class="n">indices</span><span class="o">=</span><span class="p">(</span><span class="n">iu</span><span class="p">,</span> <span class="n">ju</span><span class="p">),</span>   <span class="c1"># only compute upper triangle to save time</span>
-            <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span>
-        <span class="p">)</span>
-
-    <span class="c1"># Reconstruct the full symmetric matrix from the upper triangle values</span>
-    <span class="n">ci_vals</span>      <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">con</span><span class="o">.</span><span class="n">get_data</span><span class="p">())</span>
-    <span class="n">mat</span>          <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_rois</span><span class="p">,</span> <span class="n">n_rois</span><span class="p">))</span>
-    <span class="n">mat</span><span class="p">[</span><span class="n">iu</span><span class="p">,</span> <span class="n">ju</span><span class="p">]</span>  <span class="o">=</span> <span class="n">ci_vals</span>
-    <span class="n">mat</span><span class="p">[</span><span class="n">ju</span><span class="p">,</span> <span class="n">iu</span><span class="p">]</span>  <span class="o">=</span> <span class="n">ci_vals</span>  <span class="c1"># mirror to lower triangle since ciPLV is symmetric</span>
-    <span class="n">ci_surrogates</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">=</span> <span class="n">mat</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="n">s</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="mi">100</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Surrogate </span><span class="si">{</span><span class="n">s</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">N_SURROGATES</span><span class="si">}</span><span class="s2"> done"</span><span class="p">)</span>
-
-<span class="c1"># Average across all 500 draws</span>
-<span class="n">ci_mean</span> <span class="o">=</span> <span class="n">ci_surrogates</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Surrogate-averaged ciPLV: mean=</span><span class="si">{</span><span class="n">ci_mean</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">  max=</span><span class="si">{</span><span class="n">ci_mean</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=md-step9">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<hr/>
-<h3 id="Step-9----Fronto-Parietal-Summary-Statistics">Step 9 -- Fronto-Parietal Summary Statistics<a class="anchor-link" href="#Step-9----Fronto-Parietal-Summary-Statistics">¶</a></h3><p><strong>What it does:</strong>
-From the full ROI by ROI connectivity matrix, this step extracts three summary scores per subject: left hemisphere fronto-parietal connectivity, right hemisphere fronto-parietal connectivity, and the overall average of the two.</p>
-<p><strong>Why we do this:</strong>
-The full connectivity matrix contains values for every possible ROI pair, but what we actually care about is the relationship between frontal and parietal regions specifically. These three summary scores are the dependent variables that get passed to the statistical analysis in R. Having LH and RH separately means we can test whether aging or task condition affects one hemisphere more than the other.</p>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=code-step9">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-python"><pre><span></span><span class="c1"># np.ix_ creates an index mesh for extracting a submatrix block</span>
-<span class="c1"># for example ci_mean[np.ix_(idx_flh, idx_plh)] gives the LH frontal to LH parietal block</span>
-
-<span class="c1"># Left hemisphere: average of frontal-&gt;parietal and parietal-&gt;frontal</span>
-<span class="n">lh_fp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">([</span>
-    <span class="n">ci_mean</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ix_</span><span class="p">(</span><span class="n">idx_flh</span><span class="p">,</span> <span class="n">idx_plh</span><span class="p">)]</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span>
-    <span class="n">ci_mean</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ix_</span><span class="p">(</span><span class="n">idx_plh</span><span class="p">,</span> <span class="n">idx_flh</span><span class="p">)]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
-<span class="p">])</span>
-
-<span class="c1"># Right hemisphere</span>
-<span class="n">rh_fp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">([</span>
-    <span class="n">ci_mean</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ix_</span><span class="p">(</span><span class="n">idx_frh</span><span class="p">,</span> <span class="n">idx_prh</span><span class="p">)]</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span>
-    <span class="n">ci_mean</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ix_</span><span class="p">(</span><span class="n">idx_prh</span><span class="p">,</span> <span class="n">idx_frh</span><span class="p">)]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
-<span class="p">])</span>
-
-<span class="c1"># Overall mean across both hemispheres</span>
-<span class="n">fp_mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">([</span><span class="n">lh_fp</span><span class="p">,</span> <span class="n">rh_fp</span><span class="p">])</span>
-
-<span class="n">result</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">"sub"</span><span class="p">:</span>       <span class="n">SUBJECT_ID</span><span class="p">,</span>
-    <span class="s2">"condition"</span><span class="p">:</span> <span class="n">CONDITION</span><span class="p">,</span>
-    <span class="s2">"n_epochs"</span><span class="p">:</span>  <span class="n">n_total</span><span class="p">,</span>
-    <span class="s2">"lh_fp"</span><span class="p">:</span>     <span class="nb">float</span><span class="p">(</span><span class="n">lh_fp</span><span class="p">),</span>
-    <span class="s2">"rh_fp"</span><span class="p">:</span>     <span class="nb">float</span><span class="p">(</span><span class="n">rh_fp</span><span class="p">),</span>
-    <span class="s2">"fp_mean"</span><span class="p">:</span>   <span class="nb">float</span><span class="p">(</span><span class="n">fp_mean</span><span class="p">)</span>
-<span class="p">}</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Subject </span><span class="si">{</span><span class="n">SUBJECT_ID</span><span class="si">}</span><span class="s2"> | condition: </span><span class="si">{</span><span class="n">CONDITION</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  n_epochs = </span><span class="si">{</span><span class="n">n_total</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  lh_fp    = </span><span class="si">{</span><span class="n">lh_fp</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  rh_fp    = </span><span class="si">{</span><span class="n">rh_fp</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  fp_mean  = </span><span class="si">{</span><span class="n">fp_mean</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=md-step10">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<hr/>
-<h3 id="Step-10----Save-Results">Step 10 -- Save Results<a class="anchor-link" href="#Step-10----Save-Results">¶</a></h3><p><strong>What it does:</strong>
-The results are saved in two formats. JSON stores the full output including ROI names, condition, and surrogate settings alongside the connectivity values. CSV saves a flat table that can be directly imported into R or Python for statistical analysis.</p>
-<p><strong>Why we do this:</strong>
-The CSV format matches the output structure of the full multi-subject pipeline, so a single-subject run here is immediately compatible with the group-level analysis scripts. The JSON is useful for archiving and reproducibility since it captures all the metadata alongside the numbers.</p>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=code-step10">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-python"><pre><span></span><span class="c1"># Save full metadata and results as JSON</span>
-<span class="n">full_results</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">"condition"</span><span class="p">:</span>    <span class="n">CONDITION</span><span class="p">,</span>
-    <span class="s2">"fp_summary"</span><span class="p">:</span>   <span class="p">[</span><span class="n">result</span><span class="p">],</span>
-    <span class="s2">"n_surrogates"</span><span class="p">:</span> <span class="n">N_SURROGATES</span><span class="p">,</span>
-    <span class="s2">"roi_names"</span><span class="p">:</span>    <span class="n">roi_names</span>
-<span class="p">}</span>
-
-<span class="n">json_path</span> <span class="o">=</span> <span class="n">OUT_DIR</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"fp_ciPLV_sub</span><span class="si">{</span><span class="n">SUBJECT_ID</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">CONDITION</span><span class="si">}</span><span class="s2">.json"</span>
-<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">json_path</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-    <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">full_results</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Saved: </span><span class="si">{</span><span class="n">json_path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-
-<span class="c1"># Save as CSV -- compatible with group-level pipeline output</span>
-<span class="n">csv_path</span> <span class="o">=</span> <span class="n">OUT_DIR</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"fp_summary_sub</span><span class="si">{</span><span class="n">SUBJECT_ID</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">CONDITION</span><span class="si">}</span><span class="s2">.csv"</span>
-<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span><span class="n">result</span><span class="p">])</span>
-<span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">csv_path</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Saved: </span><span class="si">{</span><span class="n">csv_path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">=== DONE ==="</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=fb1e9df7">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<hr/>
-<h2 id="My-Decisions">My Decisions<a class="anchor-link" href="#My-Decisions">¶</a></h2><p>After working through the template and understanding each part, I made the following changes to adapt it to this dataset and research question.</p>
-<p><strong>1. Inverse method: eLORETA instead of dSPM</strong>
-The template used dSPM, which works well but tends to make sources near the surface of the brain look stronger than they actually are. For this study, where I am comparing brain network activity across age groups, that bias could quietly distort the results. I switched to eLORETA, which treats surface and deep sources equally.</p>
-<p><strong>2. Adaptive lambda2 instead of a fixed value</strong>
-The template assumed every subject's data has the same quality by using a fixed regularization value. Signal quality varies a lot in an aging sample, so I compute this value from each subject's actual data instead.</p>
-<p><strong>3. pca_flip instead of mean_flip for ROI time series</strong>
-The template averaged all the source points within a region to get one time series. I use pca_flip instead, which finds the single best representation of what all the points in that region are doing together. This is more robust, especially for larger regions.</p>
-<p><strong>4. Narrower theta band: 5 to 7 Hz instead of 4 to 7 Hz</strong>
-At 4 Hz, only about 2 full cycles fit inside our 600 ms connectivity window, which is not enough for a reliable phase estimate. Starting at 5 Hz ensures at least 3 full cycles fit, giving the connectivity measure something solid to work with.</p>
-<p><strong>5. Stimulus-locked connectivity window (0.0 to 0.6 s)</strong>
-The template computed connectivity across the full epoch. I restrict it to 0.0 to 0.6 seconds post-stimulus to focus on the window where active cognitive processing is happening.</p>
-<p><strong>6. Surrogate resampling for trial-count balancing</strong>
-The template had no trial balancing. I added 500 surrogate draws, each using a fixed number of trials, to make connectivity scores comparable across subjects regardless of how many clean epochs they had.</p>
-<p><strong>7. Hemisphere-specific ROI indexing</strong>
-The template combined all ROI labels without tracking which hemisphere they belonged to. I separate left and right hemisphere labels explicitly so I can report LH and RH fronto-parietal connectivity independently.</p>
-<p><strong>8. Handling BioSemi external channels (EXG1 to EXG8)</strong>
-BioSemi files include extra non-scalp channels that the template did not account for. I mark them as misc so MNE excludes them from source imaging.</p>
-<p><strong>9. Global forward solution computed once</strong>
-The template recomputed the forward solution for every subject. Since all subjects share the same channel layout and template brain, I compute it once and reuse it.</p>
-<p><strong>10. Multitaper for point estimate, Fourier for surrogates</strong>
-For the final connectivity estimate I use multitaper, which is more stable. For the 500 surrogate draws I use Fourier, which is faster, since stability is already achieved by averaging across draws.</p>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=md-main-note">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<hr/>
-<h2 id="Run----Single-Subject-Test">Run -- Single Subject Test<a class="anchor-link" href="#Run----Single-Subject-Test">¶</a></h2><p><em>Note: The main block below was generated by AI (Claude) and was used solely to test whether the pipeline runs correctly on a single subject. It is not part of the original analysis code.</em></p>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=code-main">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=cell-13">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8649,30 +7993,284 @@ For the final connectivity estimate I use multitaper, which is more stable. For 
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-python"><pre><span></span><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
 
-    <span class="c1"># Update these two lines to point to your data before running</span>
-    <span class="n">EEGLAB_DIR</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">"/path/to/your/data"</span><span class="p">)</span>  <span class="c1"># folder containing the .set file</span>
-    <span class="n">SUBJECT_ID</span> <span class="o">=</span> <span class="mi">301</span>                          <span class="c1"># subject ID to test</span>
-    <span class="n">CONDITION</span>  <span class="o">=</span> <span class="s2">"ontask"</span>                     <span class="c1"># 'ontask' or 'offtask'</span>
-
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Running pipeline for subject </span><span class="si">{</span><span class="n">SUBJECT_ID</span><span class="si">}</span><span class="s2">, condition: </span><span class="si">{</span><span class="n">CONDITION</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Data directory: </span><span class="si">{</span><span class="n">EEGLAB_DIR</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">"="</span> <span class="o">*</span> <span class="mi">50</span><span class="p">)</span>
-
-    <span class="c1"># Check that the file exists before running</span>
-    <span class="n">file_pattern</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"sub-</span><span class="se">{{</span><span class="s2">sub</span><span class="se">}}</span><span class="s2">_erpcon_stimlocked_</span><span class="si">{</span><span class="n">CONDITION</span><span class="si">}</span><span class="s2">.set"</span>
-    <span class="n">fname</span> <span class="o">=</span> <span class="n">EEGLAB_DIR</span> <span class="o">/</span> <span class="n">file_pattern</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">sub</span><span class="o">=</span><span class="n">SUBJECT_ID</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">fname</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"ERROR: File not found at </span><span class="si">{</span><span class="n">fname</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">"Please check EEGLAB_DIR and SUBJECT_ID above."</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"File found: </span><span class="si">{</span><span class="n">fname</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">"All steps above have already been run in order."</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">"Results saved to the output folder."</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Final results for subject </span><span class="si">{</span><span class="n">SUBJECT_ID</span><span class="si">}</span><span class="s2">:"</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">aging_pipeline</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"&gt;&gt;&gt; USING aging_pipeline:"</span><span class="p">,</span> <span class="n">aging_pipeline</span><span class="o">.</span><span class="vm">__file__</span><span class="p">)</span>
 </pre></div>
 </div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=cell-14">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<p>Here is what I now understand. In Python, every script has a built-in variable called <code>__name__</code>. When you run a script directly from the terminal (for example, <code>python aging_stim_run_.py</code>), Python automatically sets <code>__name__</code> to the string <code>"__main__"</code>. But if this same file were imported by some other script, <code>__name__</code> would be set to the file's own name instead.</p>
+<p>So the line <code>if __name__ == "__main__":</code> is basically saying: only run everything below this point if this script is being executed directly, not if it is being imported somewhere else.</p>
+<p>Why does that matter? Because the runner script is meant to be <em>run</em>, not imported. This guard makes sure the full analysis does not accidentally trigger if someone loads this file as a module in another project.</p>
+<p>The two lines inside this block import the pipeline module and then immediately print the file path of the version being used. Claude pointed out that this is a <strong>sanity check</strong>. If I had multiple versions of <code>aging_pipeline.py</code> sitting on my computer, this print statement would tell me right away which one actually got loaded. That kind of verification step is a really practical habit in research code where file versions can easily get mixed up.</p>
+<p>This was a big conceptual jump for me and I had to sit with it for a while. But once it clicked, I started seeing this pattern in almost every serious Python project I looked at.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=cell-15">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Step-6:-The-Main-Loop">Step 6: The Main Loop<a class="anchor-link" href="#Step-6:-The-Main-Loop">¶</a></h2><p>This is the core of the runner script. It is where the actual work gets done.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=cell-16">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-python"><pre><span></span>    <span class="k">for</span> <span class="n">condition</span> <span class="ow">in</span> <span class="n">CONDITIONS</span><span class="p">:</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">=========================================="</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"&gt;&gt;&gt; Processing condition: </span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="n">compute_fp_ciPLV_group</span><span class="p">(</span>
+                <span class="n">subject_ids</span>   <span class="o">=</span> <span class="n">SUBJECT_IDS</span><span class="p">,</span>
+                <span class="n">eeglab_dir</span>    <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">BASE_DIR</span><span class="p">),</span>
+                <span class="n">condition</span>     <span class="o">=</span> <span class="n">condition</span><span class="p">,</span>
+                <span class="n">n_surrogates</span>  <span class="o">=</span> <span class="n">n_surrogates</span><span class="p">,</span>
+                <span class="n">subsample_n</span>   <span class="o">=</span> <span class="n">subsample_n</span><span class="p">,</span>
+                <span class="n">random_state</span>  <span class="o">=</span> <span class="n">random_state</span><span class="p">,</span>
+                <span class="n">tmin</span>          <span class="o">=</span> <span class="n">tmin</span><span class="p">,</span>
+                <span class="n">tmax</span>          <span class="o">=</span> <span class="n">tmax</span><span class="p">,</span>
+                <span class="n">conn_tmin</span>     <span class="o">=</span> <span class="n">conn_tmin</span><span class="p">,</span>
+                <span class="n">conn_tmax</span>     <span class="o">=</span> <span class="n">conn_tmax</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  ERROR for condition=</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="k">continue</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=cell-17">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<p><strong>The <code>for</code> loop</strong><br/>
+This loops through <code>["ontask", "offtask"]</code>. On the first pass, <code>condition</code> equals <code>"ontask"</code>. On the second pass, it equals <code>"offtask"</code>. The power here is that all the analysis code is written only once and the loop handles running it for both conditions.</p>
+<p><strong>The <code>print</code> statements</strong><br/>
+These are progress markers. EEG analysis can take a long time to run, so having the terminal print out where the script currently is helps me know it is still working and has not frozen. The <code>\n</code> just adds a blank line before the separator to make the output easier to read. The <code>f"...{condition}..."</code> syntax is an f-string, which inserts the current value of <code>condition</code> directly into the printed text.</p>
+<p><strong><code>try</code> and <code>except Exception as e</code></strong><br/>
+I had seen this pattern before but never really understood why it was needed in this context. I asked Claude: why not just call the function directly?</p>
+<p>The reason is robustness. If <code>compute_fp_ciPLV_group</code> crashes on the "ontask" condition, maybe because a file is missing or the data is corrupted, the script would normally stop completely. With <code>try/except</code>, the error message gets printed to the terminal and then <code>continue</code> tells the loop to move on to the next condition instead of halting everything. For a long analysis run with multiple subjects and conditions, this protection is really important. I do not want to lose all the "offtask" results just because "ontask" had a problem.</p>
+<p><code>as e</code> stores the actual error message so it gets printed. That way I can see <em>what</em> went wrong, not just that something failed.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=cell-18">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Step-7:-Why-We-Save-to-a-CSV-File">Step 7: Why We Save to a CSV File<a class="anchor-link" href="#Step-7:-Why-We-Save-to-a-CSV-File">¶</a></h2><p>Before walking through the saving code, I want to explain something I actually had to think about. Stefon told me to save the output to a csv, but Why do we need to save to a CSV at all? What happens if we just let the script finish without saving anything?</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=cell-19">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-python"><pre><span></span>        <span class="k">if</span> <span class="ow">not</span> <span class="n">results</span><span class="p">[</span><span class="s2">"fp_summary"</span><span class="p">]:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  No results for </span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s2">, skipping CSV save."</span><span class="p">)</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># Save one CSV per condition</span>
+        <span class="n">out_csv</span> <span class="o">=</span> <span class="n">OUT_DIR</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"fp_summary_</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s2">.csv"</span>
+        <span class="n">out_csv</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="s2">"fp_summary"</span><span class="p">])</span>
+        <span class="n">preferred_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"sub"</span><span class="p">,</span> <span class="s2">"condition"</span><span class="p">,</span> <span class="s2">"n_epochs"</span><span class="p">,</span> <span class="s2">"lh_fp"</span><span class="p">,</span> <span class="s2">"rh_fp"</span><span class="p">,</span> <span class="s2">"fp_mean"</span><span class="p">]</span>
+        <span class="n">existing</span>  <span class="o">=</span> <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">preferred_cols</span> <span class="k">if</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span>
+        <span class="n">remaining</span> <span class="o">=</span> <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">existing</span><span class="p">]</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">existing</span> <span class="o">+</span> <span class="n">remaining</span><span class="p">]</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">out_csv</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"&gt;&gt;&gt; Saved: </span><span class="si">{</span><span class="n">out_csv</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="si">}</span><span class="s2"> rows)"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=cell-20">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<p><strong>What happens if we do not save</strong><br/>
+The <code>results</code> variable exists only in the computer's memory while the script is running. The moment the script finishes, everything stored in that variable disappears. To look at any number again, I would have to re-run the entire pipeline from scratch. For EEG source analysis with surrogate resampling across 40+ subjects, that could take many hours. Without saving, all of that computation is just gone.</p>
+<p><strong>What we get by saving to a CSV</strong><br/>
+Once saved, the results are on disk permanently. I can open the file in Excel to take a quick look. I can load it into R or Python for statistical analysis. I can send it to my advisor. I never have to re-run the heavy computation just to see a number. The CSV is also a clean, readable format that works with almost every analysis tool, which makes it a solid default choice for research outputs.</p>
+<p><strong><code>if not results["fp_summary"]:</code></strong><br/>
+Before trying to save anything, we check whether the results dictionary actually contains data. If the pipeline ran but came back empty (for example, no subjects were processed successfully), there is nothing to save. This prevents the script from writing a broken or empty CSV file.</p>
+<p><strong><code>out_csv = OUT_DIR / f"fp_summary_{condition}.csv"</code></strong><br/>
+This builds the full file path for the output. For the "ontask" condition it would produce something like <code>/Users/CynthiaDeng/Desktop/source_output_aging_stimlocked/fp_summary_ontask.csv</code>.</p>
+<p><strong><code>out_csv.parent.mkdir(parents=True, exist_ok=True)</code></strong><br/>
+This was a line I specifically asked Claude about. <code>out_csv.parent</code> refers to the folder the file will be saved in. <code>.mkdir(parents=True, exist_ok=True)</code> creates that folder if it does not exist yet. The <code>exist_ok=True</code> part means it will not crash if the folder already exists. Without this line, the script would throw an error any time the output folder had not been created manually beforehand.</p>
+<p><strong>Building the DataFrame and ordering columns</strong></p>
+<div class="highlight"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="s2">"fp_summary"</span><span class="p">])</span>
+<span class="n">preferred_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"sub"</span><span class="p">,</span> <span class="s2">"condition"</span><span class="p">,</span> <span class="s2">"n_epochs"</span><span class="p">,</span> <span class="s2">"lh_fp"</span><span class="p">,</span> <span class="s2">"rh_fp"</span><span class="p">,</span> <span class="s2">"fp_mean"</span><span class="p">]</span>
+<span class="n">existing</span>  <span class="o">=</span> <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">preferred_cols</span> <span class="k">if</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span>
+<span class="n">remaining</span> <span class="o">=</span> <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">existing</span><span class="p">]</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">existing</span> <span class="o">+</span> <span class="n">remaining</span><span class="p">]</span>
+</pre></div>
+<p>This converts the results into a pandas DataFrame and then reorders the columns so the most important ones appear first. <code>preferred_cols</code> is the desired column order. <code>existing</code> filters that list down to only the columns that actually exist in the data, in case some are missing. <code>remaining</code> collects any extra columns not in the preferred list. The final line combines them: preferred columns first, then anything extra.</p>
+<p>I asked Claude why we bother reordering instead of just writing the CSV directly. It said this is a practical choice: when I open the file in Excel later, I want subject ID, condition, and connectivity values to show up immediately without having to scroll or rearrange anything.</p>
+<p><strong><code>df.to_csv(out_csv, index=False)</code></strong><br/>
+The <code>index=False</code> argument stops pandas from adding a numbered row index (0, 1, 2...) as an extra column in the CSV. By default pandas includes that index, but it would just be noise in the final file since the subject ID column already uniquely identifies each row.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=cell-21">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Step-8:-The-Complete-Script">Step 8: The Complete Script<a class="anchor-link" href="#Step-8:-The-Complete-Script">¶</a></h2><p>Now that I have walked through every section, here is the full runner script in one place. Reading it now feels very different from the first time I saw it.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=cell-22">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-python"><pre><span></span><span class="c1"># aging_stim_run_.py</span>
+<span class="c1"># Runs ALL subjects across BOTH conditions (ontask, offtask)</span>
+<span class="c1"># Saves ONE combined CSV per condition</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">aging_pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">compute_fp_ciPLV_group</span><span class="p">,</span> <span class="n">SUBJECT_IDS</span>
+
+<span class="c1"># --------------------------------------------------</span>
+<span class="c1"># CONDITIONS TO PROCESS</span>
+<span class="c1"># --------------------------------------------------</span>
+<span class="n">CONDITIONS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"ontask"</span><span class="p">,</span> <span class="s2">"offtask"</span><span class="p">]</span>
+
+<span class="n">BASE_DIR</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">"/Users/CynthiaDeng/Downloads/aging_data"</span><span class="p">)</span>
+<span class="n">OUT_DIR</span>  <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">"/Users/CynthiaDeng/Desktop/source_output_aging_stimlocked"</span><span class="p">)</span>
+
+<span class="c1"># --------------------------------------------------</span>
+<span class="c1"># Pipeline parameters</span>
+<span class="c1"># --------------------------------------------------</span>
+<span class="n">n_surrogates</span>  <span class="o">=</span> <span class="mi">500</span>
+<span class="n">subsample_n</span>   <span class="o">=</span> <span class="mi">94</span>
+<span class="n">random_state</span>  <span class="o">=</span> <span class="mi">0</span>
+<span class="n">tmin</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.2</span>
+<span class="n">tmax</span> <span class="o">=</span> <span class="mf">0.8</span>
+<span class="n">conn_tmin</span> <span class="o">=</span> <span class="mf">0.0</span>
+<span class="n">conn_tmax</span> <span class="o">=</span> <span class="mf">0.6</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
+
+    <span class="kn">import</span><span class="w"> </span><span class="nn">aging_pipeline</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"&gt;&gt;&gt; USING aging_pipeline:"</span><span class="p">,</span> <span class="n">aging_pipeline</span><span class="o">.</span><span class="vm">__file__</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">condition</span> <span class="ow">in</span> <span class="n">CONDITIONS</span><span class="p">:</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">=========================================="</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"&gt;&gt;&gt; Processing condition: </span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="n">compute_fp_ciPLV_group</span><span class="p">(</span>
+                <span class="n">subject_ids</span>   <span class="o">=</span> <span class="n">SUBJECT_IDS</span><span class="p">,</span>
+                <span class="n">eeglab_dir</span>    <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">BASE_DIR</span><span class="p">),</span>
+                <span class="n">condition</span>     <span class="o">=</span> <span class="n">condition</span><span class="p">,</span>
+                <span class="n">n_surrogates</span>  <span class="o">=</span> <span class="n">n_surrogates</span><span class="p">,</span>
+                <span class="n">subsample_n</span>   <span class="o">=</span> <span class="n">subsample_n</span><span class="p">,</span>
+                <span class="n">random_state</span>  <span class="o">=</span> <span class="n">random_state</span><span class="p">,</span>
+                <span class="n">tmin</span>          <span class="o">=</span> <span class="n">tmin</span><span class="p">,</span>
+                <span class="n">tmax</span>          <span class="o">=</span> <span class="n">tmax</span><span class="p">,</span>
+                <span class="n">conn_tmin</span>     <span class="o">=</span> <span class="n">conn_tmin</span><span class="p">,</span>
+                <span class="n">conn_tmax</span>     <span class="o">=</span> <span class="n">conn_tmax</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  ERROR for condition=</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="k">continue</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">results</span><span class="p">[</span><span class="s2">"fp_summary"</span><span class="p">]:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  No results for </span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s2">, skipping CSV save."</span><span class="p">)</span>
+            <span class="k">continue</span>
+
+        <span class="n">out_csv</span> <span class="o">=</span> <span class="n">OUT_DIR</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"fp_summary_</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s2">.csv"</span>
+        <span class="n">out_csv</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="s2">"fp_summary"</span><span class="p">])</span>
+        <span class="n">preferred_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"sub"</span><span class="p">,</span> <span class="s2">"condition"</span><span class="p">,</span> <span class="s2">"n_epochs"</span><span class="p">,</span> <span class="s2">"lh_fp"</span><span class="p">,</span> <span class="s2">"rh_fp"</span><span class="p">,</span> <span class="s2">"fp_mean"</span><span class="p">]</span>
+        <span class="n">existing</span>  <span class="o">=</span> <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">preferred_cols</span> <span class="k">if</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span>
+        <span class="n">remaining</span> <span class="o">=</span> <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">existing</span><span class="p">]</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">existing</span> <span class="o">+</span> <span class="n">remaining</span><span class="p">]</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">out_csv</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"&gt;&gt;&gt; Saved: </span><span class="si">{</span><span class="n">out_csv</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="si">}</span><span class="s2"> rows)"</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">&gt;&gt;&gt; ALL DONE"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=cell-23">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Step-9:-Reflection">Step 9: Reflection<a class="anchor-link" href="#Step-9:-Reflection">¶</a></h2><p>When I first looked at this script, it felt overwhelming. Not because any single line was impossible to understand, but because I could not see the <em>purpose</em> behind the structure. Why a separate file? Why all caps? Why <code>try/except</code>? Why does <code>if __name__ == "__main__":</code> exist?</p>
+<p>Going through it section by section, mostly by asking Claude questions and then restating the answers in my own words, changed how I read Python code. I started to see that most of the lines I originally thought were just extra or boilerplate are actually deliberate decisions. They make the script more robust, more readable, and more reproducible.</p>
+<p>The biggest things I took away:</p>
+<ol>
+<li><p><strong>The pipeline and the runner serve different purposes.</strong> The pipeline does the science. The runner does the logistics. Keeping them separate makes both easier to work with.</p>
+</li>
+<li><p><strong>Re-declaring parameters in the runner is not redundant.</strong> The pipeline has default values, but the runner is where I explicitly set what I actually want for this specific study. It also means everything tunable lives in one place.</p>
+</li>
+<li><p><strong>Saving to CSV is not optional for real research.</strong> If I do not save, the results exist only in memory and disappear the moment the script ends. Hours of computation would have to be redone just to see a single number.</p>
+</li>
+<li><p><strong>Error handling protects long runs.</strong> With <code>try/except/continue</code>, one bad condition does not take down the entire analysis.</p>
+</li>
+<li><p><strong><code>if __name__ == "__main__":</code> is a guard, not just a habit.</strong> It protects the script from running accidentally if someone imports it, which is more common than I expected in research projects.</p>
+</li>
+</ol>
+<p>I used Claude throughout this process the way I would use a knowledgeable tutor. I would paste code, ask what it does, and then write the explanation in my own words until I actually understood it. The explanations in this notebook are mine. Claude helped me get there, but the understanding is something I now genuinely have.</p>
+<hr/>
+<p><em>Tools used: Python 3, Jupyter Notebook, Claude (Anthropic) as a learning assistant</em></p>
 </div>
 </div>
 </div>

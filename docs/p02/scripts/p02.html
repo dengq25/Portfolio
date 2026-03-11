@@ -7803,7 +7803,7 @@ a.anchor-link {
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <h1 id="EEG-Source-Space-Fronto-Parietal-Theta-Connectivity">EEG Source-Space Fronto-Parietal Theta Connectivity<a class="anchor-link" href="#EEG-Source-Space-Fronto-Parietal-Theta-Connectivity">¶</a></h1><p><strong>Author:</strong> Cynthia Deng</p>
-<p><strong>Dataset:</strong> Aging and Cognitive Control, Stimulus-Locked EEG</p>
+<p><strong>Date</strong> 03-10-2026</p>
 <hr/>
 </div>
 </div>
@@ -7862,38 +7862,6 @@ For each subject:
 Return ciPLV matrices + ROI names
 </code></pre>
 <p>The template was written to be general and applicable to any dataset with BioSemi 128-channel EEG. It used reasonable defaults throughout. My job was to understand each part of it, and then adapt it to the specific needs of this aging study.</p>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=md-decisions">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<hr/>
-<h2 id="My-Decisions">My Decisions<a class="anchor-link" href="#My-Decisions">¶</a></h2><p>After working through the template and understanding each part, I made the following changes to adapt it to this dataset and research question.</p>
-<p><strong>1. Inverse method: eLORETA instead of dSPM</strong>
-The template used dSPM, which works well but tends to make sources near the surface of the brain look stronger than they actually are. For this study, where I am comparing brain network activity across age groups, that bias could quietly distort the results. I switched to eLORETA, which treats surface and deep sources equally.</p>
-<p><strong>2. Adaptive lambda2 instead of a fixed value</strong>
-The template assumed every subject's data has the same quality by using a fixed regularization value. Signal quality varies a lot in an aging sample, so I compute this value from each subject's actual data instead.</p>
-<p><strong>3. pca_flip instead of mean_flip for ROI time series</strong>
-The template averaged all the source points within a region to get one time series. I use pca_flip instead, which finds the single best representation of what all the points in that region are doing together. This is more robust, especially for larger regions.</p>
-<p><strong>4. Narrower theta band: 5 to 7 Hz instead of 4 to 7 Hz</strong>
-At 4 Hz, only about 2 full cycles fit inside our 600 ms connectivity window, which is not enough for a reliable phase estimate. Starting at 5 Hz ensures at least 3 full cycles fit, giving the connectivity measure something solid to work with.</p>
-<p><strong>5. Stimulus-locked connectivity window (0.0 to 0.6 s)</strong>
-The template computed connectivity across the full epoch. I restrict it to 0.0 to 0.6 seconds post-stimulus to focus on the window where active cognitive processing is happening.</p>
-<p><strong>6. Surrogate resampling for trial-count balancing</strong>
-The template had no trial balancing. I added 500 surrogate draws, each using a fixed number of trials, to make connectivity scores comparable across subjects regardless of how many clean epochs they had.</p>
-<p><strong>7. Hemisphere-specific ROI indexing</strong>
-The template combined all ROI labels without tracking which hemisphere they belonged to. I separate left and right hemisphere labels explicitly so I can report LH and RH fronto-parietal connectivity independently.</p>
-<p><strong>8. Handling BioSemi external channels (EXG1 to EXG8)</strong>
-BioSemi files include extra non-scalp channels that the template did not account for. I mark them as misc so MNE excludes them from source imaging.</p>
-<p><strong>9. Global forward solution computed once</strong>
-The template recomputed the forward solution for every subject. Since all subjects share the same channel layout and template brain, I compute it once and reuse it.</p>
-<p><strong>10. Multitaper for point estimate, Fourier for surrogates</strong>
-For the final connectivity estimate I use multitaper, which is more stable. For the 500 surrogate draws I use Fourier, which is faster, since stability is already achieved by averaging across draws.</p>
 </div>
 </div>
 </div>
@@ -8624,6 +8592,38 @@ The CSV format matches the output structure of the full multi-subject pipeline, 
 <span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
 </pre></div>
 </div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=fb1e9df7">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<hr/>
+<h2 id="My-Decisions">My Decisions<a class="anchor-link" href="#My-Decisions">¶</a></h2><p>After working through the template and understanding each part, I made the following changes to adapt it to this dataset and research question.</p>
+<p><strong>1. Inverse method: eLORETA instead of dSPM</strong>
+The template used dSPM, which works well but tends to make sources near the surface of the brain look stronger than they actually are. For this study, where I am comparing brain network activity across age groups, that bias could quietly distort the results. I switched to eLORETA, which treats surface and deep sources equally.</p>
+<p><strong>2. Adaptive lambda2 instead of a fixed value</strong>
+The template assumed every subject's data has the same quality by using a fixed regularization value. Signal quality varies a lot in an aging sample, so I compute this value from each subject's actual data instead.</p>
+<p><strong>3. pca_flip instead of mean_flip for ROI time series</strong>
+The template averaged all the source points within a region to get one time series. I use pca_flip instead, which finds the single best representation of what all the points in that region are doing together. This is more robust, especially for larger regions.</p>
+<p><strong>4. Narrower theta band: 5 to 7 Hz instead of 4 to 7 Hz</strong>
+At 4 Hz, only about 2 full cycles fit inside our 600 ms connectivity window, which is not enough for a reliable phase estimate. Starting at 5 Hz ensures at least 3 full cycles fit, giving the connectivity measure something solid to work with.</p>
+<p><strong>5. Stimulus-locked connectivity window (0.0 to 0.6 s)</strong>
+The template computed connectivity across the full epoch. I restrict it to 0.0 to 0.6 seconds post-stimulus to focus on the window where active cognitive processing is happening.</p>
+<p><strong>6. Surrogate resampling for trial-count balancing</strong>
+The template had no trial balancing. I added 500 surrogate draws, each using a fixed number of trials, to make connectivity scores comparable across subjects regardless of how many clean epochs they had.</p>
+<p><strong>7. Hemisphere-specific ROI indexing</strong>
+The template combined all ROI labels without tracking which hemisphere they belonged to. I separate left and right hemisphere labels explicitly so I can report LH and RH fronto-parietal connectivity independently.</p>
+<p><strong>8. Handling BioSemi external channels (EXG1 to EXG8)</strong>
+BioSemi files include extra non-scalp channels that the template did not account for. I mark them as misc so MNE excludes them from source imaging.</p>
+<p><strong>9. Global forward solution computed once</strong>
+The template recomputed the forward solution for every subject. Since all subjects share the same channel layout and template brain, I compute it once and reuse it.</p>
+<p><strong>10. Multitaper for point estimate, Fourier for surrogates</strong>
+For the final connectivity estimate I use multitaper, which is more stable. For the 500 surrogate draws I use Fourier, which is faster, since stability is already achieved by averaging across draws.</p>
 </div>
 </div>
 </div>

@@ -1,0 +1,8 @@
+---
+title: "Portfolio 3"
+author: "Cynthia Deng"
+date: "03/10/2026"
+---
+
+See Jupyter Notebook:
+https://dengq25.github.io/Portfolio/p03/scripts/p03.html
