@@ -1,8 +1,13 @@
 ---
-title: "MMA Treatment and EEG Functional Connectivity in Children with ADHD:MMA Treatment and EEG Functional Connectivity in Children with ADHD: What I Tried, Why I Tried It, and What It Revealed"
+title: 'MMA Treatment and EEG Functional Connectivity in Children with ADHD:MMA Treatment
+  It, and What It Revealed'
+  and EEG Functional Connectivity in Children with ADHD: What I Tried, Why I Tried
 author: "Cynthia Deng"
 date: "03-11-2026`"
 output:
+  html_document:
+    toc: true
+    df_print: paged
   html_notebook:
     toc: true
     toc_float: true
