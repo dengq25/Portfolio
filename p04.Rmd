@@ -71,20 +71,20 @@ These packages cover data wrangling (`dplyr`, `tidyr`, `readr`, `haven`, `string
 
 ```{r import-data}
 # Demographic info (group assignment)
-demo_data <- read_sav("data/Potential_Moderators_sent to stefon 2024.sav")
+demo_data <- read_sav("p04/data/Potential_Moderators_sent_to_stefon 2024.sav")
 
 # C2P connectivity data
-C2P_data  <- read_csv("data/fp_summary_C2P.csv")
-C2P1_data <- read_csv("data/fp_summary_C2P_1.csv")
+C2P_data  <- read_csv("p04/data/fp_summary_C2P.csv")
+C2P1_data <- read_csv("p04/data/fp_summary_C2P_1.csv")
 
 # P2C connectivity data
-P2C_data  <- read_csv("data/fp_summary_P2C.csv")
-P2C1_data <- read_csv("data/fp_summary_P2C_1.csv")
-P2C2_data <- read_csv("data/fp_summary_P2C_2.csv")
+P2C_data  <- read_csv("p04/data/fp_summary_P2C.csv")
+P2C1_data <- read_csv("p04/data/fp_summary_P2C_1.csv")
+P2C2_data <- read_csv("p04/data/fp_summary_P2C_2.csv")
 
 # C2C and P2P connectivity data
-C2C_data <- read_csv("data/fp_summary_C2C.csv")
-P2P_data <- read_csv("data/fp_summary_P2P.csv")
+C2C_data <- read_csv("p04/data/fp_summary_C2C.csv")
+P2P_data <- read_csv("p04/data/fp_summary_P2P.csv")
 ```
 
 Each dataset has the same structure: one row per subject per time point, with columns for subject ID (`sub`), time point (`t`), condition code (`c`), left and right hemisphere connectivity (`lh_fp`, `rh_fp`), and the mean across hemispheres (`fp_mean`).
