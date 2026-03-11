@@ -1,5 +1,479 @@
 ---
-title: "p04"
-output: html_document
+title: "MMA Treatment and EEG Functional Connectivity in Children with ADHD:MMA Treatment and EEG Functional Connectivity in Children with ADHD: What I Tried, Why I Tried It, and What It Revealed"
+author: "Cynthia Deng"
+date: "03-11-2026`"
+output:
+  html_notebook:
+    toc: true
+    toc_float: true
+    theme: flatly
+    highlight: tango
+    number_sections: true
 ---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+---
+
+# Background and Motivation
+
+This notebook walks through the full analysis I did to examine whether MMA treatment affects EEG functional connectivity in children with ADHD. I want to be transparent about every decision I made, including the ones that did not pan out, because I think that is more useful than a polished write-up that only shows the clean version.
+
+The core question is: does MMA treatment change how the brain coordinates activity across frontal and parietal regions during tasks that require cognitive control?
+
+To measure cognitive control, we used a response-cueing paradigm developed by van Noordt, Desjardins, and Segalowitz (2015, 2016). In this task, participants see a colored border around a central stimulus. When that border changes color, it signals a shift in response demands. For example, a "certain to possible" (C2P) border change tells the participant that on upcoming trials, they may need to inhibit a response rather than just pressing a button automatically. This kind of cue demands active attention and cognitive flexibility, and it reliably elicits medial frontal theta activity in the EEG.
+
+The connectivity measure we used, `fp_mean`, captures the average functional connectivity between frontal and parietal electrodes in the theta band. The idea is that if MMA treatment improves cognitive control in children with ADHD, we should see it reflected in stronger or more organized frontal-parietal communication during these demanding trials.
+
+## Study Design
+
+- **Participants**: Children with ADHD, split into a treatment group (received MMA) and a control group
+- **Time points**: Pre-treatment (t = 1) and post-treatment (t = 2)
+- **Conditions**: Different border-change trial types from the response-cueing task
+- **Outcome**: `fp_mean` -- average frontal-parietal theta connectivity
+
+## The Conditions
+
+The paradigm produces several trial types depending on what context the border is changing from and to:
+
+- `C2P` -- Certain to Possible border change (the cue itself; signals upcoming need for response inhibition)
+- `C2P_1` -- The trial immediately after a C2P border change
+- `P2C` -- Possible to Certain border change (signals a return to easy, predictable trials)
+- `P2C_1` -- Trial immediately after a P2C border change
+- `C2C` -- Certain to Certain (no demand change; low cognitive load)
+- `P2P` -- Possible to Possible (stays demanding but no switch)
+
+One note on design decisions: I originally included a `P2C_2` condition (two trials after the P2C border change), but I dropped it deliberately. The C2P condition did not have a corresponding "_2" trial because there were not enough valid trials to compute theta connectivity at that lag. To keep the design symmetric, I excluded P2C_2 as well.
+
+---
+
+# Setup: Loading Packages
+
+```{r load-packages}
+# Load packages
+library(dplyr)
+library(tidyr)
+library(readr)
+library(haven)
+library(stringr)
+library(lme4)
+library(lmerTest)
+library(ez)
+```
+
+These packages cover data wrangling (`dplyr`, `tidyr`, `readr`, `haven`, `stringr`), mixed-effects modeling (`lme4`, `lmerTest`), and repeated-measures ANOVA (`ez`).
+
+---
+
+# Data Import
+
+```{r import-data}
+# Demographic info (group assignment)
+demo_data <- read_sav("data/Potential_Moderators_sent to stefon 2024.sav")
+
+# C2P connectivity data
+C2P_data  <- read_csv("data/fp_summary_C2P.csv")
+C2P1_data <- read_csv("data/fp_summary_C2P_1.csv")
+
+# P2C connectivity data
+P2C_data  <- read_csv("data/fp_summary_P2C.csv")
+P2C1_data <- read_csv("data/fp_summary_P2C_1.csv")
+P2C2_data <- read_csv("data/fp_summary_P2C_2.csv")
+
+# C2C and P2P connectivity data
+C2C_data <- read_csv("data/fp_summary_C2C.csv")
+P2P_data <- read_csv("data/fp_summary_P2P.csv")
+```
+
+Each dataset has the same structure: one row per subject per time point, with columns for subject ID (`sub`), time point (`t`), condition code (`c`), left and right hemisphere connectivity (`lh_fp`, `rh_fp`), and the mean across hemispheres (`fp_mean`).
+
+---
+
+# Data Wrangling
+
+## Select Key Variables
+
+```{r select-variables}
+# Keep only the columns we need
+C2P  <- C2P_data  %>% select(sub, t, c, fp_mean)
+C2P1 <- C2P1_data %>% select(sub, t, c, fp_mean)
+P2C  <- P2C_data  %>% select(sub, t, c, fp_mean)
+P2C1 <- P2C1_data %>% select(sub, t, c, fp_mean)
+P2C2 <- P2C2_data %>% select(sub, t, c, fp_mean)
+C2C  <- C2C_data  %>% select(sub, t, c, fp_mean)
+P2P  <- P2P_data  %>% select(sub, t, c, fp_mean)
+
+# Clean up demographic data
+demo <- demo_data %>%
+  select(ID, Group) %>%
+  rename(sub = ID) %>%
+  mutate(
+    sub = sub %>%
+      str_to_lower() %>%
+      str_replace("-", "")
+  )
+```
+
+I also standardized the subject ID format (lowercase, no hyphens) to make the join with the demographic file work correctly.
+
+## Build the Combined Dataset
+
+```{r combine-data}
+# Bind all six conditions together and label each one
+# P2C2 is excluded -- see design note in Background section
+six_condition_fp <- bind_rows(
+  mutate(P2C,  condition = "P2C"),
+  mutate(P2C1, condition = "P2C_1"),
+  mutate(C2P,  condition = "C2P"),
+  mutate(C2P1, condition = "C2P_1"),
+  mutate(C2C,  condition = "C2C"),
+  mutate(P2P,  condition = "P2P")
+) %>%
+  complete(
+    sub,
+    t = c(1, 2),
+    condition = c("P2C", "P2C_1", "C2P", "C2P_1", "C2C", "P2P")
+  ) %>%
+  arrange(sub, t, condition)
+
+# Drop rows with missing fp_mean
+six_condition_fp <- six_condition_fp %>%
+  filter(!is.na(fp_mean))
+```
+
+The `complete()` call makes the missing data structure explicit. If a subject is missing a condition at a given time point, that row exists as NA rather than being silently absent from the data. We then filter those out for modeling.
+
+## Add Group Labels
+
+```{r add-groups}
+# Join with demographic info to get group assignment
+all_fp <- six_condition_fp %>%
+  left_join(demo, by = "sub")
+
+# Assign control/treatment based on cohort coding
+# Group 2 = control (smaller cohort number)
+# Group 1 = treatment
+all_fp <- all_fp %>%
+  group_by(sub) %>%
+  mutate(
+    Group = case_when(
+      n_distinct(c) > 1 & c == min(c, na.rm = TRUE) ~ 2,
+      n_distinct(c) > 1 & c != min(c, na.rm = TRUE) ~ 1,
+      TRUE ~ Group
+    )
+  ) %>%
+  ungroup()
+
+# Convert to factors with meaningful labels
+all_fp <- all_fp %>%
+  mutate(
+    sub       = factor(sub),
+    Group     = factor(Group, levels = c(2, 1),
+                       labels = c("control", "treatment")),
+    t         = factor(t),
+    condition = factor(condition)
+  )
+```
+
+Group 2 is the control group and Group 1 is the treatment group. By setting "control" as the reference level, the `Grouptreatment` coefficient in the models will reflect the treatment-minus-control difference, which is what we care about.
+
+---
+
+# Primary Analysis: Mixed Linear Model
+
+## Why a Mixed Model?
+
+Each child contributes multiple observations -- two time points crossed with six conditions -- so the data are nested within subjects. A standard regression would treat all observations as independent, which they are not. Mixed-effects models handle this by including a random intercept for each subject, capturing the fact that some children have consistently higher or lower connectivity overall, separate from any treatment effect.
+
+## Model 1: Full Interaction Model
+
+This is the primary, pre-planned model. It tests whether the treatment effect on connectivity differs by time point and condition.
+
+```{r linear-model-1}
+linear_model_1 <- lmer(
+  fp_mean ~ Group * t * condition + (1 | sub),
+  data = all_fp
+)
+
+summary(linear_model_1)
+```
+
+**What we were hoping to see**: A significant `Grouptreatment:t2` interaction would mean that from pre to post, the treatment group changed differently than the control group. A three-way `Grouptreatment:t2:conditionC2P` interaction would be even better, showing the treatment effect is specific to the conditions with the highest cognitive demand.
+
+**What we got**: Nothing significant. All p-values are well above 0.05. The intercept is highly significant (the grand mean fp_mean is reliably above zero, which makes sense), but there is no evidence of a treatment effect, a time effect, a condition effect, or any interactions.
+
+## Model 2: Complex Random Effects Structure
+
+After seeing null results in Model 1, I tried adding random slopes for time and condition within subjects. The idea was that maybe children differ not just in their overall connectivity level, but also in how their connectivity tracks across time and conditions. Not accounting for this variability could in theory be suppressing the fixed effects.
+
+```{r linear-model-2}
+linear_model_2 <- lmer(
+  fp_mean ~ Group * t * condition +
+    (1 + t + condition | sub),
+  data = all_fp
+)
+
+summary(linear_model_2)
+```
+
+**What happened**: The model produced a singular fit warning. This means the random effects structure was too complex for the data to support -- we do not have enough observations per subject to reliably estimate separate random slopes for six conditions across two time points. A singular fit makes the model unreliable, so I did not draw conclusions from it.
+
+---
+
+# Exploratory Analyses
+
+I want to be upfront here. After months of getting null results, I started running variations on the analysis to see if significance would show up somewhere. This is p-hacking, and I am documenting it clearly because pretending otherwise would be dishonest.
+
+None of these analyses found significant effects. In some ways, the fact that I tried many different approaches and still found nothing makes the null result more convincing, not less.
+
+## Main Effects Only Model
+
+```{r main-effect-model}
+main_effect_model <- lmer(
+  fp_mean ~ Group + t + condition + (1 | sub),
+  data = all_fp
+)
+
+summary(main_effect_model)
+```
+
+I stripped the model down to just main effects. If there was a simple Group effect or a simple time effect that the full interaction model was obscuring, this would find it. It did not.
+
+## Two-Way Interaction Model
+
+```{r two-way-int-model}
+two_way_int_model <- lmer(
+  fp_mean ~ Group * t + Group * condition + t * condition + (1 | sub),
+  data = all_fp
+)
+
+summary(two_way_int_model)
+```
+
+This tests all two-way interactions but not the three-way term. The reasoning was that maybe the three-way interaction was soaking up degrees of freedom and burying a simpler effect. Still nothing significant.
+
+## Border Change Conditions Only
+
+Here I filtered the data to just the four "border change" conditions: C2C, P2P, P2C, and C2P. I dropped the "trial after" conditions (C2P_1, P2C_1) to focus on the border change moment itself.
+
+This decision was made after seeing null results in the full model. It was not planned in advance.
+
+```{r border-model}
+border_fp <- all_fp %>%
+  filter(condition %in% c("C2C", "P2P", "P2C", "C2P"))
+
+border_model <- lmer(
+  fp_mean ~ Group * t * condition + (1 | sub),
+  data = border_fp
+)
+
+summary(border_model)
+```
+
+Still no significant effects. There was one term that approached significance: `Grouptreatment:conditionP2P` had a p-value of 0.076. This suggests a possible difference between groups in the P2P condition specifically, but it only appeared after narrowing the data and did not survive the conventional alpha threshold. I would not interpret it as a real finding.
+
+## P2C Conditions Only
+
+I also isolated just the P2C family of conditions to look specifically at the possible-to-certain transition.
+
+```{r p2c-setup}
+P2C_condition_fp <- bind_rows(
+  mutate(P2C,  condition = "P2C"),
+  mutate(P2C1, condition = "P2C_1"),
+  mutate(P2C2, condition = "P2C_2")
+) %>%
+  complete(
+    sub,
+    t = c(1, 2),
+    condition = c("P2C", "P2C_1", "P2C_2")
+  ) %>%
+  arrange(sub, t, condition) %>%
+  filter(!is.na(fp_mean)) %>%
+  left_join(demo, by = "sub") %>%
+  group_by(sub) %>%
+  mutate(
+    Group = case_when(
+      n_distinct(c) > 1 & c == min(c, na.rm = TRUE) ~ 2,
+      n_distinct(c) > 1 & c != min(c, na.rm = TRUE) ~ 1,
+      TRUE ~ Group
+    )
+  ) %>%
+  ungroup() %>%
+  mutate(
+    sub       = factor(sub),
+    Group     = factor(Group, levels = c(2, 1),
+                       labels = c("control", "treatment")),
+    t         = factor(t),
+    condition = factor(condition)
+  )
+
+model_P2C <- lmer(
+  fp_mean ~ Group * t * condition + (1 | sub),
+  data = P2C_condition_fp
+)
+
+summary(model_P2C)
+```
+
+Another singular fit, and no significant effects.
+
+---
+
+# ANOVA Approach
+
+## Why Switch Frameworks?
+
+The repeated singular fit warnings in the mixed models suggested the data structure might be better handled by a traditional repeated-measures ANOVA. Mixed models are more flexible but they require sufficient observations per subject to estimate random effects. With the number of conditions and time points in this study, the models were consistently hitting their limits.
+
+The tradeoff with ANOVA is that it requires complete data: every subject must have a valid observation in every condition at every time point. This reduced our sample size but made the model more stable.
+
+## Prepare ANOVA Dataset
+
+```{r anova-prep}
+# Keep subjects with complete data across all 12 cells (6 conditions x 2 time points)
+all_fp_anova <- all_fp %>%
+  group_by(sub) %>%
+  filter(n_distinct(c) == 1) %>%
+  ungroup() %>%
+  group_by(sub) %>%
+  filter(!any(is.na(fp_mean))) %>%
+  ungroup() %>%
+  group_by(sub) %>%
+  filter(n() == 12) %>%
+  ungroup() %>%
+  filter(!is.na(Group))
+
+# How many subjects remain?
+n_distinct(all_fp_anova$sub)
+
+# Group sizes
+all_fp_anova %>%
+  group_by(Group) %>%
+  summarise(n = n_distinct(sub))
+```
+
+After applying the completeness requirement, 39 subjects were retained: 17 control and 22 treatment. The subjects removed were simply those missing at least one condition-by-time cell -- they were not excluded for any reason related to the outcome.
+
+## Full ANOVA
+
+```{r anova-full}
+anova_model <- ezANOVA(
+  data       = all_fp_anova,
+  dv         = fp_mean,
+  wid        = sub,
+  within     = .(t, condition),
+  between    = Group,
+  type       = 3,
+  return_aov = TRUE
+)
+
+print(anova_model)
+```
+
+**Design**: Group is the between-subjects factor, t and condition are within-subjects factors. Type III sums of squares are used because the groups are not equal in size.
+
+**Sphericity**: Mauchly's test was significant for some within-subject effects, indicating the assumption of equal variances across condition pairs is violated. Greenhouse-Geisser corrections were applied for those effects.
+
+**Results**: No significant effects. Group, time, condition, and all interactions were non-significant. The grand mean fp_mean was approximately 0.15 and was stable across all factors.
+
+## Border Change Conditions ANOVA
+
+```{r border-anova-prep}
+border_fp_anova <- border_fp %>%
+  group_by(sub) %>%
+  filter(!any(is.na(fp_mean))) %>%
+  ungroup() %>%
+  group_by(sub) %>%
+  filter(n() == 8) %>%
+  ungroup() %>%
+  filter(!is.na(Group)) %>%
+  mutate(sub = droplevels(sub))
+
+n_distinct(border_fp_anova$sub)
+
+border_fp_anova %>%
+  group_by(Group) %>%
+  summarise(n = n_distinct(sub))
+```
+
+```{r border-anova}
+anova_border <- ezANOVA(
+  data       = border_fp_anova,
+  dv         = fp_mean,
+  wid        = sub,
+  within     = .(t, condition),
+  between    = Group,
+  type       = 3,
+  return_aov = TRUE
+)
+
+print(anova_border)
+```
+
+41 subjects retained (17 control, 24 treatment). Sphericity was violated for the condition and Group:condition effects, so Greenhouse-Geisser corrections were applied. No significant effects.
+
+## P2C Conditions ANOVA
+
+```{r p2c-anova-prep}
+P2C_fp_anova <- P2C_condition_fp %>%
+  group_by(sub) %>%
+  filter(!any(is.na(fp_mean))) %>%
+  ungroup() %>%
+  group_by(sub) %>%
+  filter(n() == 6) %>%
+  ungroup() %>%
+  filter(!is.na(Group)) %>%
+  mutate(sub = droplevels(sub))
+
+n_distinct(P2C_fp_anova$sub)
+```
+
+```{r p2c-anova}
+anova_P2C <- ezANOVA(
+  data       = P2C_fp_anova,
+  dv         = fp_mean,
+  wid        = sub,
+  within     = .(t, condition),
+  between    = Group,
+  type       = 3,
+  return_aov = TRUE
+)
+
+print(anova_P2C)
+```
+
+No significant effects. Sphericity held for these conditions so no correction was necessary.
+
+---
+
+# Summary of Results
+
+Across every model I ran, there was no significant effect of MMA treatment on frontal-parietal theta connectivity. This was consistent across the primary full mixed model, simplified versions of that model, a complex random effects model (which also failed to converge properly), subsets of the data restricted to theoretically meaningful conditions, and repeated-measures ANOVA with different condition sets.
+
+The grand mean fp_mean across all conditions and time points was approximately 0.15 and showed no meaningful variation by group, time, or condition.
+
+---
+
+# What Do the Null Results Mean?
+
+A null result does not automatically mean the treatment has no effect. There are several reasons the analysis may have failed to detect an effect even if one exists.
+
+**Sample size and power**: The mixed models included a large number of parameters relative to the number of subjects. With around 68 subjects total and fewer with complete data for ANOVA, we may not have had sufficient power to detect a small or condition-specific effect.
+
+**Connectivity as the measure**: `fp_mean` captures average frontal-parietal connectivity in the theta band. It is possible that MMA treatment affects other aspects of the EEG signal -- amplitude, source-level activity, or connectivity at a different frequency -- that were not examined here.
+
+**Paradigm sensitivity in this population**: The response-cueing paradigm was developed and validated in healthy young adults (van Noordt et al., 2016). Children with ADHD may engage with the task differently, and the paradigm may not be equally sensitive to the kinds of changes treatment might produce in this group.
+
+**Pre-post design limitations**: With only two time points, it is difficult to separate genuine treatment-driven change from maturation effects, regression to the mean, or task familiarity from the first to second assessment.
+
+That said, the null result appeared consistently across every analytical approach I tried, including the exploratory ones. The p-hacking did not uncover any hidden effects. That consistency across methods at least suggests the null result is not an artifact of one particular modeling decision.
+
+---
+
+# References
+
+van Noordt, S.J.R., Campopiano, A., and Segalowitz, S.J. (2016). A functional classification of medial frontal negativity ERPs: Theta oscillations and single subject effects. *Psychophysiology*, 53, 1317-1334.
+
+van Noordt, S.J.R., Desjardins, J.A., and Segalowitz, S.J. (2015). Watch out! Medial frontal cortex is activated by cues signaling potential changes in response demands. *NeuroImage*, 114, 356-370.
