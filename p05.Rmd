@@ -1,5 +1,309 @@
 ---
-title: "Portfolio 5"
+title: "Recoding EEGLab Epochs with MATLAB"
+author: "Cynthia Deng"
+date: "3-11-2026"
+output:
+  html_document:
+    toc: true
+    toc_float: true
 ---
 
-> The projects should be numbered consecutively (i.e., in the order in which you began them), and should include for each project a description of the goal, the product (computer program, hand graph, computer graph, etc.), the data, and some interpretation. Reports must be reproducible and of high quality in terms of writing, grammar, presentation, etc.
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
+```
+
+---
+
+> **To test run the MATLAB script:** Download `make_MMA_labels.m` (p05/scripts) and the sample dataset `mma_bc36_swi_t1_c3_init.set` from this repository (p05/data), place them in the same folder, then run the following in your MATLAB command window:
+>
+> ```
+> eeglab;
+> EEG = pop_loadset('filename', 'mma_bc36_swi_t1_c3_init.set');
+> make_MMA_labels;
+> EEG = pop_saveset(EEG, 'filename', 'mma_bc36_swi_t1_c3_init_labeled.set');
+> eeglab redraw;
+> ```
+
+---
+
+# Goals
+
+This portfolio documents how I created `make_MMA_labels.m`, a MATLAB script that recodes EEG event epochs from raw numeric codes into meaningful trial labels. It covers why each section of the script exists, what I learned about MATLAB and EEGLab in the process, and how I used ChatGPT as a learning tool to get there.
+
+---
+
+# Background
+
+I came into this project knowing Python and R reasonably well, but I had never touched MATLAB before. My PI assigned me the task of writing a script to recode EEG epochs based on trial structure, and I had to figure out MATLAB, EEGLab, and EEG data formats all at the same time.
+
+I want to be honest: I could not have written this script from scratch on my own. ChatGPT generated most of the code. But my goal was never just to get a working script. I used ChatGPT as a tutor. I would ask it to write a section, then ask it to explain what each part was doing, what the purpose of a certain command was, and why the code was structured that way. I was trying to understand the logic, not memorize the syntax. I still cannot write MATLAB from scratch today. But I can read this script, understand what each section is doing, and explain the reasoning behind it. That is what this portfolio documents.
+
+---
+
+# The Task
+
+The experiment had participants responding to Go and NoGo stimuli across different block types. The raw EEG data came with event codes like `ool-1` through `ool-7`, which are just numbers that don't carry any meaning on their own. My job was to transform those into human-readable labels that captured trial context, like which block type a Go trial belonged to, and whether it came after a NoGo trial.
+
+This matters because in EEG analysis you need to epoch your data around specific events. If your event labels are just numbers, you lose the ability to sort trials by condition. Meaningful labels make everything downstream much cleaner.
+
+Here is the original mapping I started with:
+
+| Code  | Meaning                          | Variable Name |
+|-------|----------------------------------|---------------|
+| ool-1 | Border Go: Possible to Certain   | P2C           |
+| ool-2 | Go in Certain block              | Go_Cert       |
+| ool-3 | Border Go: Certain to Certain    | C2C           |
+| ool-4 | Border Go: Certain to Possible   | C2P           |
+| ool-5 | Go in Possible block             | Go_Poss       |
+| ool-6 | Border Go: Possible to Possible  | P2P           |
+| ool-7 | NoGo in Possible block           | NoGo          |
+
+---
+
+# Getting My Bearings in MATLAB
+
+Before I could understand any of the code, I needed to understand what MATLAB even is and how it handles data differently from R.
+
+The biggest thing I learned is that MATLAB is built around a data type called a **struct**, which is basically a container that holds named fields. EEGLab uses this heavily. When you load an EEG file, you get a variable called `EEG` that is one big struct. All the event information lives inside `EEG.event`, which is an array of structs where each item represents one event in the recording. Each event has a `.type` field (what kind of event it was) and a `.latency` field (when it happened), and you can attach your own custom fields to it too.
+
+In R, I would reach for a dataframe. In MATLAB, you work with these struct arrays and use dot notation to access fields. That took some getting used to, but once I saw the pattern it made sense.
+
+I also learned that MATLAB loops are much more central to the workflow than in R, where you try to avoid loops and work with vectors instead. For this task, a loop was actually the right approach because the meaning of each event depends on what came before it in the sequence. You cannot figure that out without walking through the events one by one.
+
+ChatGPT helped me understand these structural ideas before writing any code, which made it much easier to follow the logic when I saw it written out.
+
+---
+
+# Walking Through the Code
+
+## Part 1: Defining Event Codes and State Variables
+
+The first thing the script does is assign human-readable variable names to each event code string, group related codes into cell arrays, and set up state variables to track where we are in the trial sequence.
+
+```matlab
+%% 1) Event labels + state
+
+% STIMULUS event codes
+P2C     = 'ool-1';  % border Go: Possible -> Certain
+Go_Cert = 'ool-2';  % Go in Certain block
+C2C     = 'ool-3';  % border Go: Certain -> Certain
+C2P     = 'ool-4';  % border Go: Certain -> Possible
+Go_Poss = 'ool-5';  % Go in Possible block
+P2P     = 'ool-6';  % border Go: Possible -> Possible
+NoGo    = 'ool-7';  % NoGo in Possible block
+
+% Groupings
+PossibleBorders = {C2P, P2P};
+GoInPossible    = {Go_Poss, C2P, P2P};
+AllBorders      = {P2C, C2C, C2P, P2P};
+
+% State variables
+currentCueType   = '';
+goCountAfterCue  = 0;
+inNoGoEpisode    = false;
+goCountAfterNoGo = 0;
+```
+
+The groupings are cell arrays, which is MATLAB's way of storing a list of mixed types. Here they hold a list of string codes. The purpose is to make membership checks simple later: instead of writing a long chain of OR conditions, the code can just ask "is this event in this group?" using `ismember()`, which works similarly to `%in%` in R.
+
+The state variables are what I found most interesting to understand. The script needs to "remember" context as it moves through the event list: what block type are we currently in, have we seen a NoGo recently, how many Gos have happened since the last cue. These four variables carry that memory from one event to the next. GPT explained this to me as "stateful processing," which made sense once I saw how the variables get updated inside the loop.
+
+---
+
+## Part 2: Walking the Event List
+
+This is the core of the script. It loops through every event in order and decides what to do based on the event type and the current state.
+
+```matlab
+%% 2) Walk events & index Go's
+
+nEvents = numel(EEG.event);
+
+for i = 1:nEvents
+    
+    thisType = EEG.event(i).type;
+    if isnumeric(thisType)
+        thisType = num2str(thisType);
+    end
+    
+    isBorder   = ismember(thisType, AllBorders);
+    isGoInPoss = ismember(thisType, GoInPossible);
+    isNoGo     = strcmp(thisType, NoGo);
+    
+    EEG.event(i).cueEpisodeType = '';
+    EEG.event(i).cueGoIndex     = [];
+    EEG.event(i).noGoGoIndex    = [];
+```
+
+The `isnumeric` check was something GPT flagged as important. EEGLab sometimes stores event types as numbers instead of strings depending on how the data was imported. Without this check, the string comparisons would silently fail on those events and produce wrong results with no error message. That kind of silent failure is hard to catch, so it is worth defending against upfront.
+
+The three custom fields (`cueEpisodeType`, `cueGoIndex`, `noGoGoIndex`) are initialized to empty at the start of each iteration. GPT explained that in MATLAB, if you try to read a field that does not exist on a struct, it throws an error. By setting these fields to empty for every event at the start, the script guarantees they always exist, even if they never get filled in.
+
+The loop then handles three kinds of events:
+
+**Border events** reset the state. If the border is C2P or P2P, a new cue episode begins and the border itself is counted as Go index 1.
+
+```matlab
+    % 2.1 Borders
+    if isBorder
+        currentCueType  = '';
+        goCountAfterCue = 0;
+        
+        inNoGoEpisode    = false;
+        goCountAfterNoGo = 0;
+        
+        if strcmp(thisType, C2P)
+            currentCueType  = 'C2P';
+            goCountAfterCue = 1;
+            EEG.event(i).cueEpisodeType = 'C2P';
+            EEG.event(i).cueGoIndex     = goCountAfterCue;
+            
+        elseif strcmp(thisType, P2P)
+            currentCueType  = 'P2P';
+            goCountAfterCue = 1;
+            EEG.event(i).cueEpisodeType = 'P2P';
+            EEG.event(i).cueGoIndex     = goCountAfterCue;
+        end
+        
+        continue;
+    end
+```
+
+**NoGo events** mark that we are now inside a NoGo episode and reset the post-NoGo counter.
+
+```matlab
+    % 2.2 NoGo
+    if isNoGo
+        inNoGoEpisode    = true;
+        goCountAfterNoGo = 0;
+        continue;
+    end
+```
+
+**Go_Poss events** increment both the cue counter and the NoGo counter if applicable, then attach those indices to the event struct.
+
+```matlab
+    % 2.3 Go_Poss (non-border Go in Possible)
+    if isGoInPoss && strcmp(thisType, Go_Poss)
+        
+        if ~isempty(currentCueType)
+            goCountAfterCue = goCountAfterCue + 1;
+            EEG.event(i).cueEpisodeType = currentCueType;
+            EEG.event(i).cueGoIndex     = goCountAfterCue;
+        end
+        
+        if inNoGoEpisode
+            goCountAfterNoGo = goCountAfterNoGo + 1;
+            EEG.event(i).noGoGoIndex = goCountAfterNoGo;
+        end
+        
+        continue;
+    end
+```
+
+The `continue` command was new to me. GPT explained that it tells MATLAB to stop processing the current iteration and jump straight to the next one. It is a way of saying "we're done with this event, move on." In R I would instinctively use nested if/else, but using `continue` to exit each branch early makes the logic easier to follow because each event type is handled independently.
+
+---
+
+## Part 3: Building the Text Labels
+
+After the first loop stores the numeric indices on each event, a second loop uses `sprintf` to turn those indices into readable strings like `Go2-C2P` or `Go1-NoGo`.
+
+```matlab
+%% 3) Create text labels
+
+for i = 1:nEvents
+    
+    % Cue-based label: GoN-C2P / GoN-P2P
+    cueLabel = '';
+    if ~isempty(EEG.event(i).cueEpisodeType) && ~isempty(EEG.event(i).cueGoIndex)
+        cueLabel = sprintf('Go%d-%s', ...
+                           EEG.event(i).cueGoIndex, ...
+                           EEG.event(i).cueEpisodeType);
+    end
+    EEG.event(i).cueLabel = cueLabel;
+    
+    % NoGo-based label: GoN-NoGo
+    noGoLabel = '';
+    if ~isempty(EEG.event(i).noGoGoIndex)
+        noGoLabel = sprintf('Go%d-NoGo', EEG.event(i).noGoGoIndex);
+    end
+    EEG.event(i).noGoLabel = noGoLabel;
+
+    % Label actual NoGo trials themselves
+    baseLabel = '';
+    if strcmp(EEG.event(i).type, NoGo)
+        baseLabel = 'NoGo';
+    elseif ~isempty(cueLabel)
+        baseLabel = cueLabel;
+    elseif ~isempty(noGoLabel)
+        baseLabel = noGoLabel;
+    end
+    EEG.event(i).baseLabel = baseLabel;
+    
+end
+```
+
+`sprintf` is MATLAB's way of building a formatted string. The pattern `'Go%d-%s'` means: write the word "Go", then insert a number (`%d`), then a dash, then a string (`%s`). So if the cue type is `C2P` and the index is 2, you get `Go2-C2P`. GPT compared this to Python's f-strings, which helped it click for me.
+
+The reason this is a separate loop rather than being built into the first loop is to keep the two jobs separate. The first loop figures out the indices. This loop turns those indices into strings. Mixing both together would make it harder to debug when something goes wrong.
+
+---
+
+## Part 4: Replacing the Event Type
+
+The final step writes the new label back into `EEG.event(i).type`, which is the field that EEGLab actually uses when you epoch the data. The original `ool-*` code is preserved in a new field called `origType` so nothing is lost.
+
+```matlab
+%% 3b) Use baseLabel as the visible event TYPE
+
+for i = 1:nEvents
+    if ~isempty(EEG.event(i).baseLabel)
+        EEG.event(i).origType = EEG.event(i).type;
+        EEG.event(i).type     = EEG.event(i).baseLabel;
+    end
+end
+```
+
+This step is what makes the script actually useful for EEG analysis. EEGLab reads the `.type` field when you epoch the data, so if you want to extract epochs by condition, the label needs to live there. Saving the original code into `origType` first means you can always trace back to the raw event code if needed.
+
+---
+
+## Part 5: Inspection Output
+
+The last section prints the first 80 events to the MATLAB console in a formatted table. This was essential for debugging. Without it, I had no way to verify that labels were being assigned correctly without manually digging into the EEG struct.
+
+```matlab
+%% 4) Quick inspection of first N events
+
+nShow = min(80, nEvents);
+fprintf('\nIdx\tType\t\tCueType\tCueIdx\tCueLabel\t\tNoGoIdx\tNoGoLabel\n');
+fprintf('--------------------------------------------------------------------------\n');
+
+for i = 1:nShow
+    
+    thisType = EEG.event(i).type;
+    if isnumeric(thisType), thisType = num2str(thisType); end
+    
+    % ... format and print each field ...
+    
+    fprintf('%3d\t%-8s\t%-4s\t%5.1f\t%-16s\t%5.1f\t%-16s\n', ...
+        i, thisType, cueType, cueIdx, cueLabel, noGoIdx, noGoLabel);
+end
+
+disp('Event labeling complete.');
+```
+
+This section uses `fprintf` to print a formatted table to the console. The format codes like `%-8s` and `%5.1f` control how each value is displayed: the number sets the column width, the letter sets the type (string or float), and the `-` left-aligns the text. GPT explained that this is similar to Python's `format()` function, which helped it make sense quickly.
+
+This kind of inspection output is really just a sanity check. After running the labeling logic, you want to be able to glance at the first few dozen events and confirm the labels look right before saving the file.
+
+---
+
+# What I Took Away
+
+I came into this not knowing MATLAB, EEGLab, or how EEG event data is structured. I still cannot write MATLAB from scratch, and I want to be clear about that.
+
+What I can do now is understand what a script like this is doing and why. I know what a struct is and how EEGLab uses it to store events. I know what a stateful loop is and why it was the right approach for this task. I know what `ismember`, `strcmp`, `sprintf`, and `fprintf` do at a conceptual level. I know why you would initialize fields before a loop, and why you would separate index-building from label-building into two passes.
+
+Using ChatGPT as a tutor rather than just a shortcut made the difference. Every time it generated code, I asked it to explain the purpose of each piece. That process of asking "why is this here" and "what would happen without it" is what turned a working script into something I actually learned from.
