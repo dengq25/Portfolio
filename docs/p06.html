@@ -9,14 +9,16 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
+<meta name="author" content="Cynthia Deng" />
 
+<meta name="date" content="2026-03-12" />
 
-<title>Portfolio 6</title>
+<title>Portfolio 1: Reading the EEGLAB Source Code</title>
 
 <script src="site_libs/header-attrs-2.30/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<link href="site_libs/bootstrap-3.3.5/css/flatly.min.css" rel="stylesheet" />
 <script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
@@ -29,6 +31,9 @@
        h6 {font-size: 12px;}
        code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
        pre:not([class]) { background-color: white }</style>
+<script src="site_libs/jqueryui-1.13.2/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
 <link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
@@ -219,6 +224,69 @@ $(document).ready(function () {
 
 
 
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
 
 </head>
 
@@ -226,6 +294,16 @@ $(document).ready(function () {
 
 
 <div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
 
 
 
@@ -290,21 +368,249 @@ $(document).ready(function () {
 
 
 
-<h1 class="title toc-ignore">Portfolio 6</h1>
+<h1 class="title toc-ignore">Portfolio 1: Reading the EEGLAB Source
+Code</h1>
+<h4 class="author">Cynthia Deng</h4>
+<h4 class="date">2026-03-12</h4>
 
 </div>
 
 
+<hr />
 <blockquote>
-<p>The projects should be numbered consecutively (i.e., in the order in
-which you began them), and should include for each project a description
-of the goal, the product (computer program, hand graph, computer graph,
-etc.), the data, and some interpretation. Reports must be reproducible
-and of high quality in terms of writing, grammar, presentation, etc.</p>
+<p><strong>Note:</strong> The full <code>eeglab.m</code> file referenced
+in this portfolio can be found in the <code>p06/scripts</code>
+folder.</p>
 </blockquote>
+<div id="goal" class="section level1">
+<h1>Goal</h1>
+<p>This portfolio documents my process of reading <code>eeglab.m</code>,
+the main entry point of the EEGLAB toolbox (version 12, circa 2012). I
+had used EEGLAB through the GUI before, but had never looked at the
+source code. The goal was to understand what the software is actually
+doing at the code level, not just as a user clicking through menus.</p>
+<p>I should be honest that I worked through much of this with Claude.
+Claude helped me identify what each section was doing, explained
+unfamiliar syntax, and helped me figure out which parts were worth
+focusing on. The understanding in this portfolio is my own, but the
+process of getting there was genuinely collaborative.</p>
+<hr />
+</div>
+<div id="what-the-file-is-doing" class="section level1">
+<h1>What the File Is Doing</h1>
+<p><code>eeglab.m</code> is the application launcher, the entire file is
+roughly 2000 lines. When a researcher types <code>eeglab</code> at the
+MATLAB prompt, this is the code that runs. Its responsibilities are:
+checking the environment, setting up file paths, building the graphical
+interface, loading plugins, and then returning control to the user.</p>
+<p>It does not contain any EEG signal processing. Filtering, ICA,
+epoching, and statistics all live in separate files organized across
+several subfolders. This file’s job is to make all of those accessible
+through a coherent interface. Recognizing this distinction early made
+the file much easier to read. I stopped looking for the science and
+started reading it as a piece of software infrastructure.</p>
+<p>The file proceeds through several phases at startup:</p>
+<ul>
+<li><strong>Environment checks:</strong> MATLAB version validation,
+duplicate installation detection</li>
+<li><strong>Path setup:</strong> adding all EEGLAB subfolders to
+MATLAB’s search path</li>
+<li><strong>Callback string assembly:</strong> pre-building the action
+sequences attached to menu items</li>
+<li><strong>Menu construction:</strong> building the entire GUI menu bar
+programmatically</li>
+<li><strong>Plugin loading:</strong> scanning for installed plugins and
+registering them</li>
+<li><strong><code>updatemenu()</code>:</strong> a large function that
+keeps the interface synchronized with the current data state</li>
+</ul>
+<hr />
+</div>
+<div id="environment-checks" class="section level1">
+<h1>Environment Checks</h1>
+<p>The first executable code checks whether MATLAB is new enough to
+support EEGLAB:</p>
+<pre class="matlab"><code>vers = version;
+if num2str(vers(1)) &lt; 7
+    disp(&#39;Your Matlab version is too old to run EEGLAB&#39;);
+    return;
+end;</code></pre>
+<p>This is a guard clause: check the precondition at the top, exit early
+with a clear message if it fails. The file does something similar for
+duplicate EEGLAB installations. If two versions of EEGLAB exist on
+MATLAB’s path, function calls become unpredictable, and the code warns
+the user explicitly rather than failing silently later. Both checks
+reflect practical experience with the kinds of problems real users run
+into.</p>
+<hr />
+</div>
+<div id="path-setup" class="section level1">
+<h1>Path Setup</h1>
+<p>MATLAB requires that any function you want to call be on its search
+path. EEGLAB’s functions are distributed across many subfolders, none of
+which are automatically accessible. This section adds all of them using
+a helper function defined later in the same file:</p>
+<pre class="matlab"><code>myaddpath( eeglabpath, &#39;eeg_checkset.m&#39;, &#39;functions/adminfunc&#39; );
+myaddpath( eeglabpath, &#39;supergui.m&#39;,     &#39;functions/guifunc&#39;   );
+myaddpath( eeglabpath, &#39;pop_loadbci.m&#39;,  &#39;functions/popfunc&#39;   );</code></pre>
+<p>The logic is: if the named function is not already accessible, add
+the specified folder to the path. This is preferable to blindly
+appending folders on every startup, which would accumulate duplicate
+entries over repeated calls.</p>
+<p>One detail worth noting is how the code handles MATLAB’s Signal
+Processing Toolbox, which is a paid add-on:</p>
+<pre class="matlab"><code>if ~license(&#39;test&#39;,&#39;signal_toolbox&#39;)
+    addpath( signalpath );  % use EEGLAB&#39;s bundled fallback functions
+else
+    rmpathifpresent( signalpath );  % use the official toolbox instead
+end;</code></pre>
+<p>EEGLAB ships with its own versions of the signal functions it needs.
+If the user does not have the official toolbox, the fallback is loaded
+silently. This kind of adaptation to the user’s environment is good
+design. It removes a potential barrier to entry that many researchers
+would not know how to troubleshoot.</p>
+<hr />
+</div>
+<div id="callback-strings" class="section level1">
+<h1>Callback Strings</h1>
+<p>This section took the most effort to understand, and I needed
+Claude’s help to work through it. Before the menu is constructed, the
+code builds a set of variables with names like <code>cb_runica</code>,
+<code>cb_epoch</code>, and <code>cb_reref</code>. They look like
+ordinary variable assignments, but their contents are strings of MATLAB
+code:</p>
+<pre class="matlab"><code>cb_runica = [ check &#39;[EEG LASTCOM] = pop_runica(EEG);&#39; e_store ]</code></pre>
+<p>These are executable strings that will be attached to menu items as
+callbacks. When the user clicks “Run ICA,” MATLAB evaluates the string
+stored in <code>cb_runica</code>. The variables <code>check</code> and
+<code>e_store</code> are also strings, concatenated in to wrap every
+action with precondition verification and history logging
+automatically.</p>
+<p>For reference, <code>check</code> expands to something like:</p>
+<pre class="matlab"><code>&#39;[EEG LASTCOM] = eeg_checkset(EEG, &#39;&#39;data&#39;&#39;); ...&#39;</code></pre>
+<p>This confirms that data is loaded before attempting to run ICA. The
+<code>e_store</code> piece logs the command and saves the result. So
+every single menu action in EEGLAB is actually a three-part sequence,
+assembled from reusable string fragments before the interface is even
+built.</p>
+<p>I had not seen this pattern before. In Python or R you would pass a
+function reference as a callback. MATLAB’s <code>uimenu</code> system
+expects a string, so the authors adapted to that constraint by
+pre-assembling composite action strings. The double-escaped quotes
+inside the strings (<code>''</code>) made the code visually noisy, which
+is part of why this section was difficult to parse initially.</p>
+<hr />
+</div>
+<div id="menu-construction" class="section level1">
+<h1>Menu Construction</h1>
+<p>With the callback strings assembled, the code builds the menu bar.
+There is no visual interface builder involved. Every item is created
+explicitly:</p>
+<pre class="matlab"><code>file_m  = uimenu( W_MAIN, &#39;Label&#39;, &#39;File&#39; );
+tools_m = uimenu( W_MAIN, &#39;Label&#39;, &#39;Tools&#39; );
+
+uimenu( tools_m, &#39;Label&#39;, &#39;Run ICA&#39;,        &#39;CallBack&#39;, cb_runica, &#39;foregroundcolor&#39;, &#39;b&#39; );
+uimenu( tools_m, &#39;Label&#39;, &#39;Extract epochs&#39;, &#39;CallBack&#39;, cb_epoch );
+uimenu( tools_m, &#39;Label&#39;, &#39;Re-reference&#39;,   &#39;CallBack&#39;, cb_reref );</code></pre>
+<p>Each top-level menu is stored as a handle variable, and submenus are
+built by passing that handle as the parent. The hierarchy of the code
+directly reflects the hierarchy visible in the interface. There are
+hundreds of these calls spanning several hundred lines.</p>
+<p>Each menu item also carries a <code>userdata</code> string that
+encodes when it should be active:</p>
+<pre class="matlab"><code>onepoch = &#39;startup:off;continuous:off&#39;;
+
+uimenu( tools_m, &#39;Label&#39;, &#39;Extract epochs&#39;, &#39;userdata&#39;, onepoch, &#39;CallBack&#39;, cb_epoch );</code></pre>
+<p>The tag <code>'startup:off;continuous:off'</code> means this item is
+disabled at startup and when data is continuous. It becomes enabled only
+once the data has been epoched. These tags are not visible to the user.
+They are metadata attached to each menu item describing its own
+activation condition, which a separate function reads and applies.</p>
+<hr />
+</div>
+<div id="updatemenu-keeping-the-interface-in-sync"
+class="section level1">
+<h1><code>updatemenu()</code>: Keeping the Interface in Sync</h1>
+<p>The largest function in the file, at roughly 1,000 lines, is
+<code>updatemenu()</code>. It runs after every significant user action
+to refresh the interface based on the current state of the data.</p>
+<p>The function first determines what state the data is in by assembling
+a list of status tags:</p>
+<pre class="matlab"><code>menustatus = {};
+
+% no data loaded:
+menustatus = { &#39;startup&#39; };
+
+% one continuous dataset:
+menustatus = { &#39;continuous_dataset&#39; };
+
+% data has been epoched:
+menustatus = { &#39;continuous_dataset&#39;, &#39;epoched_dataset&#39; };</code></pre>
+<p>It also appends secondary condition tags:</p>
+<pre class="matlab"><code>if isempty(EEG.icaweights), menustatus{end+1} = &#39;ica_absent&#39;; end
+if isempty(EEG.chanlocs),   menustatus{end+1} = &#39;chanloc_absent&#39;; end
+if ~isempty(ALLERP),        menustatus{end+1} = &#39;erp_dataset&#39;; end</code></pre>
+<p>With the status list built, the function retrieves all menu handles
+and their <code>userdata</code> strings, then checks for matches:</p>
+<pre class="matlab"><code>allmenus = findobj( W_MAIN, &#39;type&#39;, &#39;uimenu&#39; );
+allstrs  = get(allmenus, &#39;userdata&#39;);
+
+indmatch = cellfun(@(x)(~isempty(findstr(num2str(x), &#39;startup:off&#39;))), allstrs);
+set(allmenus(indmatch), &#39;enable&#39;, &#39;off&#39;);</code></pre>
+<p>Rather than maintaining an explicit list of which items to enable or
+disable in each state, the function handles all menu items at once
+through a single pattern-matching pass over their tags. Adding a new
+menu item in the future only requires putting the correct tag on it
+during construction. No changes to <code>updatemenu()</code> are
+needed.</p>
+<p>Reading this function gave me the clearest picture of how EEGLAB
+models the EEG analysis workflow. The pipeline it assumes is:</p>
+<ol style="list-style-type: decimal">
+<li>Load raw continuous data</li>
+<li>Cut the data into epochs around stimulus events</li>
+<li>Run ICA to decompose the signal into independent components</li>
+<li>Compute ERPs by averaging across trials</li>
+</ol>
+<p>Each stage unlocks the next set of tools in the interface. The
+grayed-out menus are not cosmetic. They reflect a prerequisite structure
+encoded in the software: you cannot reject epochs before you have
+epochs, and you cannot inspect ICA components before running ICA. The
+interface enforces this through the tag system rather than through error
+messages after the fact.</p>
+<hr />
+</div>
+<div id="what-remained-unclear" class="section level1">
+<h1>What Remained Unclear</h1>
+<p>There is a full section of the file dedicated to global variables
+that I did not cover in this portfolio. The code declares and
+initializes a set of variables shared across the entire toolbox,
+including <code>EEG</code>, <code>ALLEEG</code>,
+<code>CURRENTSET</code>, and others. Claude explained the general
+concept to me, that these variables hold the current dataset and session
+state and are accessible by any function without being passed
+explicitly. But the deeper implications of how global state is managed
+across a session, and why certain variables are structured the way they
+are, was a level of MATLAB-specific design I did not feel confident
+enough to write about meaningfully. I flagged it as something to return
+to.</p>
+<p>The history and logging system was also confusingn. There is a
+function called eegh() that appears constantly throughout the code, and
+a global variable ALLCOM that seems to accumulate something over the
+course of a session. I have a rough sense that this is related to
+reproducibility, that EEGLAB is keeping some kind of record of what the
+user does.</p>
+<p>I followed the plugin loading section only at a conceptual level, but
+there were details I skipped. EEGLAB scans its plugins/ folder for files
+named eegplugin_*.m and calls each one at startup. The general idea of a
+registration system is clear enough. What happens beyond that, how
+plugins interact with each other, what the error handling looks like in
+practice, I did not examine closely enough to say anything reliable.</p>
+</div>
 
 
 
+</div>
+</div>
 
 </div>
 
@@ -337,6 +643,35 @@ $(document).ready(function () {
 
 <!-- code folding -->
 
+<script>
+$(document).ready(function ()  {
+
+    // temporarily add toc-ignore selector to headers for the consistency with Pandoc
+    $('.unlisted.unnumbered').addClass('toc-ignore')
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
 
 <!-- dynamically load mathjax for compatibility with self-contained -->
 <script>
