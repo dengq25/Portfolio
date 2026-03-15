@@ -1,5 +1,208 @@
 ---
-title: "Portfolio 8"
+title: "Learning to Use a University HPC Cluster"
+author: "EEG Methods Portfolio"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    theme: flatly
+    highlight: tango
 ---
 
-> The projects should be numbered consecutively (i.e., in the order in which you began them), and should include for each project a description of the goal, the product (computer program, hand graph, computer graph, etc.), the data, and some interpretation. Reports must be reproducible and of high quality in terms of writing, grammar, presentation, etc.
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
+```
+
+---
+
+# Goal
+
+The goal of this portfolio is to document how I learned to use a university high-performance computing (HPC) cluster from scratch. This is not a polished tutorial written after the fact. It is an honest account of the process, including what I did not know, what went wrong, what I had to look up or ask for help with, and how my understanding built up gradually through repeated trial and error.
+
+---
+
+# Motivation
+
+My source connectivity pipeline and runner script, which I documented in Portfolios 2 and 3, are written in Python and were running locally on my MacBook. They worked, but barely. The laptop would overheat, the fan would run constantly, and a single run took more than an entire night to complete. At some point it became clear that running this analysis locally was not a sustainable option.
+
+Wake Forest University has a high-performance computing (HPC) cluster available to students and researchers. I had created an account a while back but had never actually used it. I did not know what a cluster was in any practical sense, I had never used one, and I had no idea where to start. This portfolio documents the full process of learning, from the very first command I ran to successfully retrieving my results.
+
+---
+
+# An Early Error with rsync
+
+Before I even properly logged in, I made my first mistake. My professor had shared a command to give me access to the lab data on the cluster. It looked like this:
+
+```{bash}
+rsync -vr dengq25@artemis.deac.wfu.edu:/deac/psy/vannoordtGrp/vannoos/data_for_cynthia/aging_data/*.* /PATH_TO_WHERE_YOU_WANT_FILES_TO_GO
+```
+
+I did not fully understand what this command did. I replaced the placeholder path with a folder on my Mac and ran it. Within seconds, hundreds of files began downloading to my local computer. The `rsync` command is designed to synchronize or transfer files between locations, and what my professor had shared was a command to copy the entire aging dataset from the cluster directly onto my machine. That was not what I needed at all.
+
+I panicked and asked ChatGPT how to stop it. That is when I first learned about `Ctrl+C`. In the terminal, `Ctrl+C` sends an interrupt signal to whatever process is currently running, which forces it to stop immediately. I pressed it, the download stopped, and I stepped back to think about what I actually needed to do first, which was simply log in to the cluster without transferring anything.
+
+---
+
+# Connecting to the Cluster via SSH
+
+To connect to the cluster, I needed to use `ssh`, which stands for Secure Shell. Claude explained that `ssh` is a protocol that allows you to remotely access and control another computer entirely through the terminal. Instead of sitting in front of that machine, you connect to it over a network and interact with it as if you were there. The basic syntax is:
+
+```{bash}
+ssh username@cluster_address
+```
+
+For my cluster, that looked like:
+
+```{bash}
+ssh dengq25@artemis.deac.wfu.edu
+```
+
+After pressing Enter, the terminal asked for my password. I typed it and nothing appeared on the screen. No characters, no dots, nothing at all. I assumed something had gone wrong and tried again. Same result. I was confused and thought the connection was broken.
+
+Claude explained that this is intentional behavior on Linux systems. Password input is hidden entirely, meaning no visual feedback is given as you type. The reasoning is security — even hiding the length of the password prevents someone watching your screen from gaining information. Coming from a Mac, where at least dots appear as you type a password, this was unexpected. Once I understood what was happening, I typed my password carefully and pressed Enter. It worked and I was logged in.
+
+---
+
+# Exploring the File System
+
+Once logged in, I was presented with a command prompt. It looked similar to my Mac terminal, but I was now operating on a remote machine located on campus. I had no graphical interface, no folders I could click on, and no visual cues about where I was or what was around me. Everything had to be done through text commands.
+
+My professor had given me access to the lab's shared storage directory. I needed to find my data, but I did not know how to look around. Claude introduced me to two fundamental commands for navigating a Linux file system.
+
+The first is `ls`, which stands for list. Running `ls` prints the names of all files and folders in your current location, similar to opening a folder and seeing its contents.
+
+The second is `cd`, which stands for change directory. It moves you from your current location into another folder, similar to double-clicking a folder to open it.
+
+```{bash}
+# See what is in the current location
+ls
+
+# Move into the lab directory
+cd /deac/psy/vannoordtGrp/vannoos/
+
+# See what is inside
+ls
+```
+
+Using these two commands, I was able to navigate through the cluster's file system. I found a folder called `data_for_cynthia`, moved into it, and confirmed that my data files were already there. My professor had uploaded them in advance. Navigating the file system this way felt unfamiliar at first, but the logic of `ls` to look and `cd` to move became intuitive quickly.
+
+---
+
+# Transferring Scripts to the Cluster
+
+My data was on the cluster, but my Python scripts were only on my MacBook. I had two files: the main pipeline script and the runner script. I needed to get them onto the cluster before I could do anything.
+
+Claude introduced me to `scp`, which stands for Secure Copy Protocol. It is built on the same technology as `ssh` and allows you to transfer files between your local machine and a remote server directly from the terminal. The syntax for uploading a file from your local computer to a remote server is:
+
+```{bash}
+scp /local/path/to/file.py username@cluster_address:/remote/path/to/destination/
+```
+
+This command is run from your local terminal, not from inside the cluster. I uploaded both scripts like this:
+
+```{bash}
+scp /Users/cynthia/scripts/pipeline.py dengq25@artemis.deac.wfu.edu:/deac/psy/vannoordtGrp/vannoos/scripts/
+scp /Users/cynthia/scripts/runner.sh dengq25@artemis.deac.wfu.edu:/deac/psy/vannoordtGrp/vannoos/scripts/
+```
+
+After running these commands, I logged back into the cluster and used `ls` to confirm both files had transferred successfully.
+
+---
+
+# Job Failures and Troubleshooting
+
+At this point I had my data and scripts on the cluster and was ready to try running the pipeline. Claude explained that clusters do not work like a personal computer where you simply run a script directly. Because many users share the same computing resources, a job scheduling system called SLURM manages who gets to use resources and when. Instead of executing your script immediately, you submit it as a job request. SLURM queues it and runs it when the requested resources become available.
+
+The command to submit a job is `sbatch`, followed by the name of the runner script.
+
+```{bash}
+sbatch runner.sh
+```
+
+When a job is submitted successfully, SLURM returns a job ID number. Claude explained that this ID is how you track and refer to your job going forward. To check whether a job is currently running or queued, you use `squeue` with your username.
+
+```{bash}
+squeue -u dengq25
+```
+
+This displays a table showing all active jobs under your account, including the job ID, its current status, how long it has been running, and what resources it is using. If nothing appears, either your job has finished or it has failed.
+
+My pipeline went through several rounds of failure before it ran successfully. Each time, I had to identify what went wrong, fix it, and resubmit. The key tool for diagnosing failures was the SLURM log.
+
+Claude explained that every time a job runs on the cluster, SLURM automatically writes two output files: a log file and an output file. The log file records everything that happened during the job, including any error messages. These files are named using the job ID, for example `slurm-12345.out`. To read them, you use the `cat` command, which prints the contents of a file directly to the terminal.
+
+```{bash}
+cat slurm-12345.out
+```
+
+I did not know these files existed before Claude told me about them. Understanding that they existed and that they contained a full record of what the job did, including exactly what went wrong and where, changed how I approached every subsequent failure. Instead of guessing, I could read the log and find out precisely what the problem was.
+
+## Missing Dependencies
+
+The first few failures were caused by missing Python packages. After submitting the job, I checked `squeue` and the job appeared briefly before disappearing. My instinct told me it could not have finished that quickly, something was wrong. I asked Claude what to do, and that is when I learned about the log file.
+
+I ran `cat` on the log and found error messages like:
+
+```
+ModuleNotFoundError: No module named 'pandas'
+```
+
+Claude explained that the cluster has its own software environment that is completely separate from my MacBook. Any packages I had installed locally do not exist on the cluster unless they are installed there as well. The pipeline depended on several Python libraries that the cluster did not have.
+
+To install them, Claude walked me through using `conda`, which is a package manager widely used in scientific computing. A package manager is a tool that handles downloading, installing, and managing software libraries. The basic command is:
+
+```{bash}
+conda install pandas
+```
+
+I installed `pandas` and resubmitted the job. It failed again with a different error, this time a different missing package. I checked the log, installed that package, and resubmitted. This cycle repeated roughly five or six times. Each submission revealed one more missing package, and each log told me exactly what it was. The packages I ended up needing to install included `numpy`, `scipy`, `mne`, and several others specific to the pipeline.
+
+It was a slow process, but it was not frustrating in the way that blind debugging would be. Each failure had a clear cause written in the log, and each fix was straightforward. By the end I had a complete working Python environment on the cluster.
+
+## Wrong File Paths
+
+Once the environment was set up, the job ran a little longer before failing again. The log this time showed file not found errors. The pipeline script was still referencing paths from my local MacBook, for example `/Users/cynthia/data/`, which do not exist anywhere on the cluster. The script was looking for files in locations that were entirely wrong for the remote environment.
+
+I needed to edit the script directly on the cluster to update the paths. Claude introduced me to `nano`, which is a text editor that runs entirely inside the terminal. Unlike a graphical editor, there is no mouse, no toolbar, and no menu. Everything is done with the keyboard. You open a file by typing:
+
+```{bash}
+nano pipeline.py
+```
+
+The file contents appear in the terminal window. You navigate using arrow keys and type to make changes. To save the file, you press `Ctrl+O`, then press `Enter` to confirm the filename. To exit nano, you press `Ctrl+X`.
+
+This caused me real confusion at first. On a Mac, almost every keyboard shortcut uses the `Command` key rather than `Ctrl`. I kept pressing `Command+O` to save and `Command+X` to exit, and nothing happened the way I expected. It took several attempts and some frustration before I retrained myself to reach for `Ctrl` instead. Once that adjustment clicked, editing files in nano became straightforward.
+
+I updated all the file paths in the pipeline script to point to the correct locations on the cluster and resubmitted the job.
+
+## Corrupted Data File
+
+With the environment complete and the paths corrected, the job finally ran for a meaningful amount of time. I monitored it using `squeue` every ten minutes or so, watching the status column to confirm it was still active. After about 40 minutes, it disappeared from the queue.
+
+I was relieved and assumed it had finished. But I had learned by this point to check the log before drawing any conclusions. I ran `cat` on the log file and found that the job had crashed rather than completed. The pipeline had encountered a corrupted or malformed participant data file and hit an error it could not recover from, causing the entire job to exit early.
+
+To fix this, I opened the runner script in `nano` and added a line to explicitly exclude that participant's file from the analysis. I then resubmitted the job.
+
+---
+
+# Successful Run and Result Retrieval
+
+After excluding the problematic file, the job ran for approximately one and a half hours. I checked `squeue` periodically throughout, confirming each time that the job was still active. When it finally disappeared from the queue, I went straight to the log.
+
+The log showed no errors. The pipeline had completed successfully across all remaining participants. I then navigated to the output directory on the cluster using `cd` and `ls`, and found the two files I was expecting.
+
+- `fp_summary_ontask.csv`
+- `fp_summary_offtask.csv`
+
+Both were there. To download them to my Mac, I used `scp` in reverse, this time specifying the remote cluster file as the source and a local folder on my computer as the destination.
+
+```{bash}
+scp dengq25@artemis.deac.wfu.edu:/deac/psy/vannoordtGrp/vannoos/output/fp_summary_ontask.csv /Users/cynthia/results/
+scp dengq25@artemis.deac.wfu.edu:/deac/psy/vannoordtGrp/vannoos/output/fp_summary_offtask.csv /Users/cynthia/results/
+```
+
+Both files opened correctly on my Mac and contained the connectivity results needed for the analysis. Without all of that headache, I would not have learned this as fast as I did.
+
+---

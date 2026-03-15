@@ -9,14 +9,16 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
+<meta name="author" content="EEG Methods Portfolio" />
 
+<meta name="date" content="2026-03-15" />
 
-<title>Portfolio 8</title>
+<title>Learning to Use a University HPC Cluster</title>
 
 <script src="site_libs/header-attrs-2.30/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<link href="site_libs/bootstrap-3.3.5/css/flatly.min.css" rel="stylesheet" />
 <script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
@@ -29,9 +31,10 @@
        h6 {font-size: 12px;}
        code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
        pre:not([class]) { background-color: white }</style>
+<script src="site_libs/jqueryui-1.13.2/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
-<link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
-<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
 
 <style type="text/css">
   code{white-space: pre-wrap;}
@@ -42,18 +45,110 @@
   ul.task-list{list-style: none;}
     </style>
 
-<style type="text/css">code{white-space: pre;}</style>
-<script type="text/javascript">
-if (window.hljs) {
-  hljs.configure({languages: []});
-  hljs.initHighlightingOnLoad();
-  if (document.readyState && document.readyState === "complete") {
-    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+
+
+<style type="text/css">
+  code {
+    white-space: pre;
   }
+  .sourceCode {
+    overflow: visible;
+  }
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
 }
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {  background-color: #f8f8f8; }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ef2929; } /* Alert */
+code span.an { color: #8f5902; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #204a87; } /* Attribute */
+code span.bn { color: #0000cf; } /* BaseN */
+code span.cf { color: #204a87; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4e9a06; } /* Char */
+code span.cn { color: #8f5902; } /* Constant */
+code span.co { color: #8f5902; font-style: italic; } /* Comment */
+code span.cv { color: #8f5902; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #8f5902; font-weight: bold; font-style: italic; } /* Documentation */
+code span.dt { color: #204a87; } /* DataType */
+code span.dv { color: #0000cf; } /* DecVal */
+code span.er { color: #a40000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #0000cf; } /* Float */
+code span.fu { color: #204a87; font-weight: bold; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #8f5902; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #204a87; font-weight: bold; } /* Keyword */
+code span.op { color: #ce5c00; font-weight: bold; } /* Operator */
+code span.ot { color: #8f5902; } /* Other */
+code span.pp { color: #8f5902; font-style: italic; } /* Preprocessor */
+code span.sc { color: #ce5c00; font-weight: bold; } /* SpecialChar */
+code span.ss { color: #4e9a06; } /* SpecialString */
+code span.st { color: #4e9a06; } /* String */
+code span.va { color: #000000; } /* Variable */
+code span.vs { color: #4e9a06; } /* VerbatimString */
+code span.wa { color: #8f5902; font-weight: bold; font-style: italic; } /* Warning */
+
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
 </script>
-
-
 
 
 
@@ -219,6 +314,69 @@ $(document).ready(function () {
 
 
 
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
 
 </head>
 
@@ -226,6 +384,16 @@ $(document).ready(function () {
 
 
 <div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
 
 
 
@@ -290,21 +458,299 @@ $(document).ready(function () {
 
 
 
-<h1 class="title toc-ignore">Portfolio 8</h1>
+<h1 class="title toc-ignore">Learning to Use a University HPC
+Cluster</h1>
+<h4 class="author">EEG Methods Portfolio</h4>
+<h4 class="date">2026-03-15</h4>
 
 </div>
 
 
-<blockquote>
-<p>The projects should be numbered consecutively (i.e., in the order in
-which you began them), and should include for each project a description
-of the goal, the product (computer program, hand graph, computer graph,
-etc.), the data, and some interpretation. Reports must be reproducible
-and of high quality in terms of writing, grammar, presentation, etc.</p>
-</blockquote>
+<hr />
+<div id="goal" class="section level1">
+<h1>Goal</h1>
+<p>The goal of this portfolio is to document how I learned to use a
+university high-performance computing (HPC) cluster from scratch. This
+is not a polished tutorial written after the fact. It is an honest
+account of the process, including what I did not know, what went wrong,
+what I had to look up or ask for help with, and how my understanding
+built up gradually through repeated trial and error.</p>
+<hr />
+</div>
+<div id="motivation" class="section level1">
+<h1>Motivation</h1>
+<p>My source connectivity pipeline and runner script, which I documented
+in Portfolios 2 and 3, are written in Python and were running locally on
+my MacBook. They worked, but barely. The laptop would overheat, the fan
+would run constantly, and a single run took more than an entire night to
+complete. At some point it became clear that running this analysis
+locally was not a sustainable option.</p>
+<p>Wake Forest University has a high-performance computing (HPC) cluster
+available to students and researchers. I had created an account a while
+back but had never actually used it. I did not know what a cluster was
+in any practical sense, I had never used one, and I had no idea where to
+start. This portfolio documents the full process of learning, from the
+very first command I ran to successfully retrieving my results.</p>
+<hr />
+</div>
+<div id="an-early-error-with-rsync" class="section level1">
+<h1>An Early Error with rsync</h1>
+<p>Before I even properly logged in, I made my first mistake. My
+professor had shared a command to give me access to the lab data on the
+cluster. It looked like this:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">rsync</span> <span class="at">-vr</span> dengq25@artemis.deac.wfu.edu:/deac/psy/vannoordtGrp/vannoos/data_for_cynthia/aging_data/<span class="pp">*</span>.<span class="pp">*</span> /PATH_TO_WHERE_YOU_WANT_FILES_TO_GO</span></code></pre></div>
+<p>I did not fully understand what this command did. I replaced the
+placeholder path with a folder on my Mac and ran it. Within seconds,
+hundreds of files began downloading to my local computer. The
+<code>rsync</code> command is designed to synchronize or transfer files
+between locations, and what my professor had shared was a command to
+copy the entire aging dataset from the cluster directly onto my machine.
+That was not what I needed at all.</p>
+<p>I panicked and asked ChatGPT how to stop it. That is when I first
+learned about <code>Ctrl+C</code>. In the terminal, <code>Ctrl+C</code>
+sends an interrupt signal to whatever process is currently running,
+which forces it to stop immediately. I pressed it, the download stopped,
+and I stepped back to think about what I actually needed to do first,
+which was simply log in to the cluster without transferring
+anything.</p>
+<hr />
+</div>
+<div id="connecting-to-the-cluster-via-ssh" class="section level1">
+<h1>Connecting to the Cluster via SSH</h1>
+<p>To connect to the cluster, I needed to use <code>ssh</code>, which
+stands for Secure Shell. Claude explained that <code>ssh</code> is a
+protocol that allows you to remotely access and control another computer
+entirely through the terminal. Instead of sitting in front of that
+machine, you connect to it over a network and interact with it as if you
+were there. The basic syntax is:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">ssh</span> username@cluster_address</span></code></pre></div>
+<p>For my cluster, that looked like:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">ssh</span> dengq25@artemis.deac.wfu.edu</span></code></pre></div>
+<p>After pressing Enter, the terminal asked for my password. I typed it
+and nothing appeared on the screen. No characters, no dots, nothing at
+all. I assumed something had gone wrong and tried again. Same result. I
+was confused and thought the connection was broken.</p>
+<p>Claude explained that this is intentional behavior on Linux systems.
+Password input is hidden entirely, meaning no visual feedback is given
+as you type. The reasoning is security — even hiding the length of the
+password prevents someone watching your screen from gaining information.
+Coming from a Mac, where at least dots appear as you type a password,
+this was unexpected. Once I understood what was happening, I typed my
+password carefully and pressed Enter. It worked and I was logged in.</p>
+<hr />
+</div>
+<div id="exploring-the-file-system" class="section level1">
+<h1>Exploring the File System</h1>
+<p>Once logged in, I was presented with a command prompt. It looked
+similar to my Mac terminal, but I was now operating on a remote machine
+located on campus. I had no graphical interface, no folders I could
+click on, and no visual cues about where I was or what was around me.
+Everything had to be done through text commands.</p>
+<p>My professor had given me access to the lab’s shared storage
+directory. I needed to find my data, but I did not know how to look
+around. Claude introduced me to two fundamental commands for navigating
+a Linux file system.</p>
+<p>The first is <code>ls</code>, which stands for list. Running
+<code>ls</code> prints the names of all files and folders in your
+current location, similar to opening a folder and seeing its
+contents.</p>
+<p>The second is <code>cd</code>, which stands for change directory. It
+moves you from your current location into another folder, similar to
+double-clicking a folder to open it.</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co"># See what is in the current location</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="fu">ls</span></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co"># Move into the lab directory</span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="bu">cd</span> /deac/psy/vannoordtGrp/vannoos/</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co"># See what is inside</span></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="fu">ls</span></span></code></pre></div>
+<p>Using these two commands, I was able to navigate through the
+cluster’s file system. I found a folder called
+<code>data_for_cynthia</code>, moved into it, and confirmed that my data
+files were already there. My professor had uploaded them in advance.
+Navigating the file system this way felt unfamiliar at first, but the
+logic of <code>ls</code> to look and <code>cd</code> to move became
+intuitive quickly.</p>
+<hr />
+</div>
+<div id="transferring-scripts-to-the-cluster" class="section level1">
+<h1>Transferring Scripts to the Cluster</h1>
+<p>My data was on the cluster, but my Python scripts were only on my
+MacBook. I had two files: the main pipeline script and the runner
+script. I needed to get them onto the cluster before I could do
+anything.</p>
+<p>Claude introduced me to <code>scp</code>, which stands for Secure
+Copy Protocol. It is built on the same technology as <code>ssh</code>
+and allows you to transfer files between your local machine and a remote
+server directly from the terminal. The syntax for uploading a file from
+your local computer to a remote server is:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">scp</span> /local/path/to/file.py username@cluster_address:/remote/path/to/destination/</span></code></pre></div>
+<p>This command is run from your local terminal, not from inside the
+cluster. I uploaded both scripts like this:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">scp</span> /Users/cynthia/scripts/pipeline.py dengq25@artemis.deac.wfu.edu:/deac/psy/vannoordtGrp/vannoos/scripts/</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="fu">scp</span> /Users/cynthia/scripts/runner.sh dengq25@artemis.deac.wfu.edu:/deac/psy/vannoordtGrp/vannoos/scripts/</span></code></pre></div>
+<p>After running these commands, I logged back into the cluster and used
+<code>ls</code> to confirm both files had transferred successfully.</p>
+<hr />
+</div>
+<div id="job-failures-and-troubleshooting" class="section level1">
+<h1>Job Failures and Troubleshooting</h1>
+<p>At this point I had my data and scripts on the cluster and was ready
+to try running the pipeline. Claude explained that clusters do not work
+like a personal computer where you simply run a script directly. Because
+many users share the same computing resources, a job scheduling system
+called SLURM manages who gets to use resources and when. Instead of
+executing your script immediately, you submit it as a job request. SLURM
+queues it and runs it when the requested resources become available.</p>
+<p>The command to submit a job is <code>sbatch</code>, followed by the
+name of the runner script.</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="ex">sbatch</span> runner.sh</span></code></pre></div>
+<p>When a job is submitted successfully, SLURM returns a job ID number.
+Claude explained that this ID is how you track and refer to your job
+going forward. To check whether a job is currently running or queued,
+you use <code>squeue</code> with your username.</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="ex">squeue</span> <span class="at">-u</span> dengq25</span></code></pre></div>
+<p>This displays a table showing all active jobs under your account,
+including the job ID, its current status, how long it has been running,
+and what resources it is using. If nothing appears, either your job has
+finished or it has failed.</p>
+<p>My pipeline went through several rounds of failure before it ran
+successfully. Each time, I had to identify what went wrong, fix it, and
+resubmit. The key tool for diagnosing failures was the SLURM log.</p>
+<p>Claude explained that every time a job runs on the cluster, SLURM
+automatically writes two output files: a log file and an output file.
+The log file records everything that happened during the job, including
+any error messages. These files are named using the job ID, for example
+<code>slurm-12345.out</code>. To read them, you use the <code>cat</code>
+command, which prints the contents of a file directly to the
+terminal.</p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="fu">cat</span> slurm-12345.out</span></code></pre></div>
+<p>I did not know these files existed before Claude told me about them.
+Understanding that they existed and that they contained a full record of
+what the job did, including exactly what went wrong and where, changed
+how I approached every subsequent failure. Instead of guessing, I could
+read the log and find out precisely what the problem was.</p>
+<div id="missing-dependencies" class="section level2">
+<h2>Missing Dependencies</h2>
+<p>The first few failures were caused by missing Python packages. After
+submitting the job, I checked <code>squeue</code> and the job appeared
+briefly before disappearing. My instinct told me it could not have
+finished that quickly, something was wrong. I asked Claude what to do,
+and that is when I learned about the log file.</p>
+<p>I ran <code>cat</code> on the log and found error messages like:</p>
+<pre><code>ModuleNotFoundError: No module named &#39;pandas&#39;</code></pre>
+<p>Claude explained that the cluster has its own software environment
+that is completely separate from my MacBook. Any packages I had
+installed locally do not exist on the cluster unless they are installed
+there as well. The pipeline depended on several Python libraries that
+the cluster did not have.</p>
+<p>To install them, Claude walked me through using <code>conda</code>,
+which is a package manager widely used in scientific computing. A
+package manager is a tool that handles downloading, installing, and
+managing software libraries. The basic command is:</p>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="ex">conda</span> install pandas</span></code></pre></div>
+<p>I installed <code>pandas</code> and resubmitted the job. It failed
+again with a different error, this time a different missing package. I
+checked the log, installed that package, and resubmitted. This cycle
+repeated roughly five or six times. Each submission revealed one more
+missing package, and each log told me exactly what it was. The packages
+I ended up needing to install included <code>numpy</code>,
+<code>scipy</code>, <code>mne</code>, and several others specific to the
+pipeline.</p>
+<p>It was a slow process, but it was not frustrating in the way that
+blind debugging would be. Each failure had a clear cause written in the
+log, and each fix was straightforward. By the end I had a complete
+working Python environment on the cluster.</p>
+</div>
+<div id="wrong-file-paths" class="section level2">
+<h2>Wrong File Paths</h2>
+<p>Once the environment was set up, the job ran a little longer before
+failing again. The log this time showed file not found errors. The
+pipeline script was still referencing paths from my local MacBook, for
+example <code>/Users/cynthia/data/</code>, which do not exist anywhere
+on the cluster. The script was looking for files in locations that were
+entirely wrong for the remote environment.</p>
+<p>I needed to edit the script directly on the cluster to update the
+paths. Claude introduced me to <code>nano</code>, which is a text editor
+that runs entirely inside the terminal. Unlike a graphical editor, there
+is no mouse, no toolbar, and no menu. Everything is done with the
+keyboard. You open a file by typing:</p>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="fu">nano</span> pipeline.py</span></code></pre></div>
+<p>The file contents appear in the terminal window. You navigate using
+arrow keys and type to make changes. To save the file, you press
+<code>Ctrl+O</code>, then press <code>Enter</code> to confirm the
+filename. To exit nano, you press <code>Ctrl+X</code>.</p>
+<p>This caused me real confusion at first. On a Mac, almost every
+keyboard shortcut uses the <code>Command</code> key rather than
+<code>Ctrl</code>. I kept pressing <code>Command+O</code> to save and
+<code>Command+X</code> to exit, and nothing happened the way I expected.
+It took several attempts and some frustration before I retrained myself
+to reach for <code>Ctrl</code> instead. Once that adjustment clicked,
+editing files in nano became straightforward.</p>
+<p>I updated all the file paths in the pipeline script to point to the
+correct locations on the cluster and resubmitted the job.</p>
+</div>
+<div id="corrupted-data-file" class="section level2">
+<h2>Corrupted Data File</h2>
+<p>With the environment complete and the paths corrected, the job
+finally ran for a meaningful amount of time. I monitored it using
+<code>squeue</code> every ten minutes or so, watching the status column
+to confirm it was still active. After about 40 minutes, it disappeared
+from the queue.</p>
+<p>I was relieved and assumed it had finished. But I had learned by this
+point to check the log before drawing any conclusions. I ran
+<code>cat</code> on the log file and found that the job had crashed
+rather than completed. The pipeline had encountered a corrupted or
+malformed participant data file and hit an error it could not recover
+from, causing the entire job to exit early.</p>
+<p>To fix this, I opened the runner script in <code>nano</code> and
+added a line to explicitly exclude that participant’s file from the
+analysis. I then resubmitted the job.</p>
+<hr />
+</div>
+</div>
+<div id="successful-run-and-result-retrieval" class="section level1">
+<h1>Successful Run and Result Retrieval</h1>
+<p>After excluding the problematic file, the job ran for approximately
+one and a half hours. I checked <code>squeue</code> periodically
+throughout, confirming each time that the job was still active. When it
+finally disappeared from the queue, I went straight to the log.</p>
+<p>The log showed no errors. The pipeline had completed successfully
+across all remaining participants. I then navigated to the output
+directory on the cluster using <code>cd</code> and <code>ls</code>, and
+found the two files I was expecting.</p>
+<ul>
+<li><code>fp_summary_ontask.csv</code></li>
+<li><code>fp_summary_offtask.csv</code></li>
+</ul>
+<p>Both were there. To download them to my Mac, I used <code>scp</code>
+in reverse, this time specifying the remote cluster file as the source
+and a local folder on my computer as the destination.</p>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="fu">scp</span> dengq25@artemis.deac.wfu.edu:/deac/psy/vannoordtGrp/vannoos/output/fp_summary_ontask.csv /Users/cynthia/results/</span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a><span class="fu">scp</span> dengq25@artemis.deac.wfu.edu:/deac/psy/vannoordtGrp/vannoos/output/fp_summary_offtask.csv /Users/cynthia/results/</span></code></pre></div>
+<p>Both files opened correctly on my Mac and contained the connectivity
+results needed for the analysis. Without all of that headache, I would
+not have learned this as fast as I did.</p>
+<hr />
+</div>
 
 
 
+</div>
+</div>
 
 </div>
 
@@ -337,6 +783,35 @@ $(document).ready(function () {
 
 <!-- code folding -->
 
+<script>
+$(document).ready(function ()  {
+
+    // temporarily add toc-ignore selector to headers for the consistency with Pandoc
+    $('.unlisted.unnumbered').addClass('toc-ignore')
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
 
 <!-- dynamically load mathjax for compatibility with self-contained -->
 <script>
