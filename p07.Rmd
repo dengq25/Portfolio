@@ -1,5 +1,243 @@
 ---
-title: "Portfolio 7"
+title: "Portfolio 2: Comparing Standard EEGLAB with the Lab's Modified Version"
+author: "EEG Methods Portfolio"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    theme: flatly
+    toc: true
+    toc_float: true
 ---
 
-> The projects should be numbered consecutively (i.e., in the order in which you began them), and should include for each project a description of the goal, the product (computer program, hand graph, computer graph, etc.), the data, and some interpretation. Reports must be reproducible and of high quality in terms of writing, grammar, presentation, etc.
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
+```
+
+> **Note:** Both versions of `eeglab.m` referenced in this portfolio can be found in the `p04/scripts` folder.
+
+---
+
+# Goal
+
+This portfolio compares my professor's edited version of EEGLAB with the standard 2012 version I analyzed in Portfolio 6. The edited version was created specifically for the MMA dataset discussed in Portfolio 4, which comes from Milligan et al. (2019). That study examined the impact of a mindfulness martial arts program on attention in youth with learning disabilities, using EEG recorded with a BioSemi ActiveTwo system at 512 Hz from 64 channels in a clinical setting. ICA was used for artifact removal, and the paper explicitly notes that the quality of EEG preprocessing was central to detecting the effects they found.
+
+My goal here is to identify what was changed between the two versions and understand how each change serves the specific needs of this dataset and research environment. I worked through this with Claude's help, using a line-by-line diff of the two files and connecting the changes back to what I know about the data from the paper.
+
+---
+
+# Process
+
+The standard version is 2,043 lines and the professor's version is 2,110 lines. I ran a diff between the two files to get a list of every line that was added, removed, or changed. The output was long and initially hard to read.
+
+The following lines differ between the standard EEGLAB v12 and the professor's modified version:
+
+```
+Lines 150-152 (standard) / 150-182 (professor): version checking block
+Line 155 (standard) / 165-182 (professor): second MATLAB version check added
+Line 158 (standard) / 185 (professor): `which()` replaced with `mywhich()`
+Line 167 (standard) / 194 (professor): `which()` replaced with `mywhich()`
+Line 171 (standard) / 198 (professor): `which()` replaced with `mywhich()`
+Line 173 (standard) / 201-204 (professor): warning backtrace handling added
+Line 189 (standard) / 220 (professor): `which()` replaced with `mywhich()`
+Lines 219 (standard) / 251-268 (professor): path conflict warning block added
+Line 231 (standard) / 281 (professor): plugins path explicitly added
+Line 235 (standard) / 285 (professor): `which()` replaced with `mywhich()`
+Lines 245-246 (standard) / 295-298 (professor): additional toolboxes removed
+Line 250 (standard) / 304 (professor): signal toolbox check expanded
+Lines 266-267 (standard) / 319 (professor): dipfit plugin path removed
+Lines 278 (standard) / 331-339 (professor): empty dataset cleanup block added
+Line 311 (standard) / 372 (professor): history string simplified
+Lines 319-322 (standard) / 380-381 (professor): invalid argument handling changed
+Line 386 (standard) / 445-446 (professor): `e_load_study` modified, `e_plot_study` added
+Line 404 (standard) / 464 (professor): catchstrs update_study switched to `e_plot_study`
+Line 409 (standard) / 468 (professor): `ptopoplot` line removed
+Lines 417-448 (standard) / 476 (professor): external folder scanning block removed
+Line 452 (standard) / 480-481 (professor): `ptopoplot` moved inside conditional
+Line 500 (standard) / 528 (professor): `cb_plugin3` callback removed
+Line 529 (standard) / 557 (professor): `cb_epoch` end action changed from `e_store` to `e_newset`
+Line 535 (standard) / 563 (professor): `cb_autorej` precondition changed from `check` to `checkepoch`
+Lines 597-603 (standard) / 625-631 (professor): seven study callbacks switched to `e_plot_study`
+Lines 664-667 (standard) / 692-693 (professor): BIOSIG menu items made unconditional
+Line 695 (standard) / 721 (professor): "Clear study" renamed to "Clear study / Clear all"
+Lines 703-707 (standard) / 729-732 (professor): plugin management menu uncommented and relabeled
+Line 813 (standard) / 838 (professor): auto-updater menu item commented out
+Line 869 (standard) / 894 (professor): `which()` replaced with `mywhich()`
+Lines 878-988 (standard) / 904-1028 (professor): plugin system rewritten
+Lines 999-1004 (standard) / 1039-1040 (professor): FILE-IO and BIOSIG menu items made unconditional
+Line 1035 (standard) / 1071 (professor): updater try block uncommented
+Line 1044 (standard) / 1079 (professor): updater menu handle removed
+Lines 1048-1049 (standard) / 1083-1085 (professor): updater callback commented out
+Lines 1073-1074 (standard) / 1109-1110 (professor): version string formatting changed
+Lines 1081-1090 (standard) / 1117-1126 (professor): release notes links updated
+Line 1097 (standard) / 1134 (professor): startup time warning added
+Line 1111 (standard) / 1148-1151 (professor): auto-update timer disabled
+Lines 1114-1119 (standard) / 1154-1158 (professor): catch block uncommented
+Line 1148 (standard) / 1187 (professor): PC Windows added to font size condition
+Lines 1153 (standard) / 1192-1195 (professor): font size detection logic expanded
+Line 1197 (standard) / 1239 (professor): `which()` replaced with `mywhich()`
+Line 1220 (standard) / 1263 (professor): try block added to chat close callback
+Line 1222 (standard) / 1265-1266 (professor): catch block added to chat close callback
+Line 1251 (standard) / 1295 (professor): main frame unit set to normalized
+Line 1301 (standard) / 1345 (professor): font size uses `TEXT_FONTSIZE_L` variable
+Line 1358 (standard) / 1402 (professor): toolbar refresh wrapped in `eval()`
+Lines 1372 (standard) / 1416-1420 (professor): warning suppression added around `eeglab_options`
+Line 1817 (standard) / 1864 (professor): epoch detection condition expanded
+Lines 1862-1863 (standard) / 1909-1910 (professor): `cellfun` wrapped in `eval()`, variable renamed
+Lines 1867-1869 (standard) / 1914-1916 (professor): `cellfun` wrapped in `eval()`, variable renamed
+Lines 1873-1875 (standard) / 1920-1922 (professor): `cellfun` wrapped in `eval()`, variable renamed
+Lines 1883-1884 (standard) / 1930-1931 (professor): `cellfun` wrapped in `eval()`, variable renamed
+Lines 1890-1891 (standard) / 1937-1938 (professor): `cellfun` wrapped in `eval()`, variable renamed
+Lines 1897-1898 (standard) / 1944-1945 (professor): `cellfun` wrapped in `eval()`, variable renamed
+Lines 1903-1904 (standard) / 1950-1951 (professor): `cellfun` wrapped in `eval()`, variable renamed
+Lines 1911-1912 (standard) / 1958-1959 (professor): `cellfun` wrapped in `eval()`, variable renamed
+Lines 1923 (standard) / 1971-1982 (professor): font size reset loop added
+Lines 1981-1982 (standard) / 2040-2042 (professor): `aadpathifnotexist` renamed to `addpathifnotexist`, uses `mywhich()`
+Line 1991 (standard) / 2051 (professor): `which()` replaced with `mywhich()`
+Line 2019 (standard) / 2079 (professor): `parsepluginname` function signature updated
+Lines 2042 (standard) / 2103-2109 (professor): `mywhich()` function definition added
+```
+
+Claude helped me sort the changes into categories to reason through what each change was doing and whether it connected to the MMA dataset specifically. Not all changes could be confidently connected to the dataset. Where I am uncertain, I say so and explain what information would be needed to close that gap.
+
+---
+
+# Why the Data Context Matters Here
+
+Understanding what this modified version was built for is necessary to make sense of the changes. The standard EEGLAB is general-purpose software. The professor's version is not. It was modified during an active longitudinal study, which means the changes were not planned in advance but written in response to things that broke or behaved incorrectly during real use. Knowing the hardware, the institutional setting, and the timeline of the study is what makes it possible to distinguish a deliberate design choice from a patch to a specific problem.
+
+More information about the raw data that the professor version of EEGLAB is intended to handle can be found in Portfolio 4, section *Background and Motivation*. 
+
+---
+
+# What Changed: By Category
+
+## More Careful Version and Environment Checking
+
+The standard version checks the MATLAB version with a simple comparison and stops the program if it is too old. The professor's version replaces this with something more careful:
+
+```matlab
+% Standard version
+if num2str(vers(1)) < 7
+    disp('Your Matlab version is too old to run EEGLAB');
+    return;
+end;
+
+% Professor's version
+if str2num(vers(1)) < 7 && str2num(vers(1)) >= 5
+    warning('You are using a Matlab version older than 7.0');
+    warning('Download EEGLAB 4.3b at http://sccn.ucsd.edu/eeglab/...');
+end;
+```
+
+Instead of stopping immediately, the modified version warns the user and points them toward a compatible older version. There is also a second check added for versions older than 7.6 that warns but does not stop the program.
+
+More importantly, the modified version adds a step that removes BIOSIG from the path before doing version detection. BIOSIG ships its own version of MATLAB's `version` function, which can interfere with how EEGLAB reads the version number. This is a specific fix for a conflict that would only appear when BIOSIG is installed, which it would be in any lab using BioSemi hardware. The standard version has no awareness of this problem.
+
+## A Wrapper for File Path Lookups
+
+Every call to MATLAB's built-in `which()` function is replaced with a custom wrapper called `mywhich()`, defined at the bottom of the file:
+
+```matlab
+function res = mywhich(varargin);
+try
+    res = which(varargin{:});
+catch
+    fprintf('Warning: permission error accessing %s\n', varargin{1});
+end
+```
+
+The standard `which()` will crash if it encounters a folder it does not have permission to read. The wrapper catches that error and prints a warning instead, letting the program continue. This is a practical fix for a shared institutional computing environment. A clinical research lab at a university is almost certainly running on servers with restricted permissions on certain directories. The standard EEGLAB was not designed with that situation in mind.
+
+## Stricter Path and Toolbox Management
+
+Several path-related safety checks were added that are not in the standard version. One warns when it detects that a user has manually added all EEGLAB subfolders to their path:
+
+```matlab
+warning(sprintf(['Path Warning: It appears that you have added the path to all of the\n' ...
+    'subfolders to EEGLAB. This may create issues with some EEGLAB extensions...']));
+```
+
+This kind of warning gets added because someone in the lab did exactly that and it caused problems.
+
+The toolbox removal logic is also expanded. The standard version removes two toolboxes when the "do not use toolboxes" option is set. The professor's version removes four, adding the optimization and image processing toolboxes. This suggests those toolboxes were present in the lab's MATLAB installation and were creating conflicts with EEGLAB functions.
+
+## A Fix for How Epoched Data is Detected
+
+This change is directly connected to the type of data being collected. The standard version determines whether a dataset is epoched by checking:
+
+```matlab
+if EEG.trials > 1
+```
+
+The professor's version changes this to:
+
+```matlab
+if EEG.trials > 1 || EEG.xmin ~= 0
+```
+
+The added condition checks whether the epoch start time is not zero. BioSemi recordings can produce data that has been segmented into epochs where the trial count still reads as 1. The standard check would misclassify that data as continuous, which would enable the wrong set of menu items and potentially allow operations on the data that are not appropriate for epoched recordings. The professor's version catches this edge case.
+
+This is the kind of fix that only gets written after someone notices the software behaving incorrectly on a specific type of file. Given that the lab was working with BioSemi data, this is a plausible explanation for why it was added.
+
+## Compatibility Fixes in the Menu State System
+
+In Portfolio 6, I described how `updatemenu()` uses `cellfun` to match menu item tags and enable or disable them. In the professor's version, every one of those calls is wrapped in `eval()` and the result variable is renamed:
+
+```matlab
+% Standard version
+indmatch = cellfun(@(x)(~isempty(findstr(num2str(x), 'startup:off'))), allstrs);
+set(allmenus(indmatch), 'enable', 'off');
+
+% Professor's version
+eval('indmatchvar = cellfun(@(x)(~isempty(findstr(num2str(x), ''startup:off''))), allstrs);');
+set(allmenus(indmatchvar), 'enable', 'off');
+```
+
+This is a MATLAB version compatibility fix. Certain versions of MATLAB handle anonymous functions inside `cellfun` differently, and wrapping the call in `eval()` forces consistent behavior. The variable is also renamed from `indmatch` to `indmatchvar` to avoid a naming conflict in some MATLAB versions.
+
+This change appears in every single instance of this pattern throughout `updatemenu()`, which strongly suggests it was causing a real recurring problem. If it were precautionary, it would not need to be applied everywhere.
+
+## The Font Size Fix
+
+The professor's version adds a loop at the end of `updatemenu()` that resets the font size of every text element in the interface after each redraw, attributed in the code comments to "RMC" and specifically to MATLAB 2014 compatibility:
+
+```matlab
+% adjust all font sizes (RMC fix MATLAB 2014 compatibility)
+for i = 1:length(handlesname)
+    if isprop(eval(['g.' handlesname{i}]),'Style') & ~strcmp(handlesname{i},'win0')
+        propval = get(eval(['g.' handlesname{i}]), 'Style');
+        if strcmp(propval,'text')
+            set(eval(['g.' handlesname{i}]),'FontSize',TEXT_FONTSIZE);
+        end
+    end
+end
+```
+
+MATLAB 2014 changed how it renders GUI text elements, causing font sizes to reset to incorrect values every time the interface redraws. In EEGLAB, `updatemenu()` runs after every action the user takes, meaning the interface would become visually broken constantly during normal use. For a lab running a longitudinal clinical study with dozens of participants across multiple testing sessions, this would have made the software practically unusable without the fix. The MMA data collection started in January 2013 and extended through follow-up sessions in 2015, placing the lab directly in the window where this problem would have appeared. This is one of the clearest cases in the entire diff where the timeline of the study directly explains why a specific change was made.
+
+---
+
+# What Could Not Be Fully Connected to the Data
+
+The first is the plugin system rewrite. The professor's version substantially reworks how EEGLAB discovers and loads plugins, including better version tracking and specific handling for BIOSIG and Fieldtrip. The BIOSIG changes make sense given the lab's hardware. But the full scope of the rewrite goes beyond BIOSIG alone, and to understand what drove the rest of it I would need to know what other plugins the lab had installed at the time. That information is not in the paper or the code comments.
+
+The second is the split between `e_load_study` and `e_plot_study` callbacks. The standard version uses one callback for all group-level STUDY operations. The professor's version adds a second one that updates study results without reloading all participant data from disk, which is faster and less likely to overwrite things unintentionally. Whether this change mattered for the MMA data depends on something the paper does not tell us: did the lab process all 86 participants together using EEGLAB's STUDY framework, or did they process each participant individually and combine results later? If they used STUDY for group analysis, this change would have had a direct impact on their workflow. If they processed participants one at a time, it may not have mattered at all.
+
+---
+
+# How the Changes Relate to the Data Specifically
+
+Reading all the changes together against what is known about the MMA study, a clear picture emerges of why this version exists and what it was solving.
+
+The study used BioSemi hardware, which requires BIOSIG. BIOSIG is not a standard part of EEGLAB and introduces path conflicts that the standard version is not built to handle. The BIOSIG-related fixes, including the version detection conflict and the unconditional BIOSIG menu items, are a direct response to that hardware choice.
+
+The study ran in a university clinical setting on shared infrastructure. Shared servers have permission restrictions that personal computers do not. The `mywhich()` wrapper exists because the standard `which()` function crashes in that environment. This is not a general improvement; it is a fix for the specific computing context this lab was working in.
+
+The data came from a clinical youth population with ADHD and other comorbidities, which makes EEG inherently noisier and preprocessing more demanding. The epoch detection fix matters here because correctly identifying whether data is continuous or epoched controls which operations are available in the interface. Misclassifying the data at that step could mean applying the wrong preprocessing operations, which would directly affect the quality of the ICA decomposition and ultimately the ERP results. Given that the paper identifies preprocessing quality as central to their findings, this is not a minor detail.
+
+The study spanned from 2013 through at least 2015, crossing the MATLAB 2014 release boundary. Two of the most pervasive changes in the diff, the font size fix and the `cellfun` wrapping, are both explicitly MATLAB version compatibility fixes. They were not needed for the 2012 standard version but became necessary as the lab continued working with this code on newer MATLAB installations during an ongoing study.
+
+What the changes do not show is any indication of preprocessing decisions being embedded in the launcher itself. The modifications are all infrastructure: making the software stable, compatible, and reliable in a specific environment. The science happens elsewhere, in the pipeline functions that `eeglab.m` provides access to. But a launcher that crashes or misclassifies data is a methodological problem, not just a technical inconvenience. That is the thread connecting all of these changes back to the data.
+
+---
+
