@@ -1,8 +1,10 @@
 ---
 title: "Portfolio 2"
 author: "Cynthia Deng"
-date: "03/10/2026"
+date: "03/15/2026"
 ---
+
+# EEG Source-Space Fronto-Parietal Theta Connectivity
 
 See Jupyter Notebook:
 https://dengq25.github.io/Portfolio/p02/scripts/p02.html

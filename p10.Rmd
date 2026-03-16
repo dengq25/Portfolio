@@ -1,5 +1,11 @@
 ---
-title: "Portfolio 9"
+title: "Portfolio 10"
+author: "Cynthia Deng"
+date: "03/10/2026"
 ---
+# PhD Program Application Scraper
 
-> The projects should be numbered consecutively (i.e., in the order in which you began them), and should include for each project a description of the goal, the product (computer program, hand graph, computer graph, etc.), the data, and some interpretation. Reports must be reproducible and of high quality in terms of writing, grammar, presentation, etc.
+See Jupyter Notebook:
+https://dengq25.github.io/Portfolio/p10/scripts/p10.html
+
+> **Note:** When I ran this notebook locally, the file paths were set to my local Downloads folder. For this portfolio submission, I have updated the paths to reflect the repository structure (../data/). I have not been able to re-run the notebook after pushing to GitHub to confirm the paths work as written. If you are cloning this repo and running it yourself, the notebook should work as long as you run it from p10/scripts/ with the data file in p10/data/. If you encounter a file not found error, check that your working directory is set to p10/scripts/.
